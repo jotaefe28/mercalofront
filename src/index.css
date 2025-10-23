@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Nequi Brand Colors */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    
+    /* Nequi Primary - Rosa/Magenta */
+    --primary: 340 82% 52%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* Nequi Secondary - Morado */
+    --secondary: 258 84% 25%;
+    --secondary-foreground: 0 0% 98%;
+    
+    /* Nequi Accent - Rosa claro */
+    --accent: 340 82% 95%;
+    --accent-foreground: 340 82% 15%;
+    
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 340 82% 52%;
+    --radius: 1rem;
+  }
+
+  .dark {
+    /* Dark mode con tonos Nequi */
+    --background: 258 84% 8%;
+    --foreground: 0 0% 95%;
+    --card: 258 84% 12%;
+    --card-foreground: 0 0% 95%;
+    --popover: 258 84% 12%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 340 82% 52%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 258 84% 20%;
+    --secondary-foreground: 0 0% 98%;
+    --accent: 258 84% 16%;
+    --accent-foreground: 0 0% 95%;
+    --muted: 258 84% 16%;
+    --muted-foreground: 240 5% 64.9%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 258 84% 20%;
+    --input: 258 84% 20%;
+    --ring: 340 82% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Raleway', sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  /* Gradientes estilo Nequi */
+  .gradient-nequi-primary {
+    background: linear-gradient(135deg, #E91E63 0%, #D81B60 50%, #AD1457 100%);
+  }
+  
+  .gradient-nequi-secondary {
+    background: linear-gradient(135deg, #2D1B69 0%, #1A0D3A 100%);
+  }
+  
+  .gradient-nequi-accent {
+    background: linear-gradient(135deg, #F8BBD9 0%, #E91E63 100%);
+  }
+  
+  .gradient-nequi-dark {
+    background: linear-gradient(135deg, #1A0D3A 0%, #0D0618 100%);
+  }
+  
+  .gradient-nequi-hero {
+    background: linear-gradient(135deg, #2D1B69 0%, #E91E63 100%);
+  }
+  
+  /* Efectos de glassmorphism estilo Nequi */
+  .glass-nequi {
+    backdrop-filter: blur(20px) saturate(180%);
+    background-color: rgba(233, 30, 99, 0.1);
+    border: 1px solid rgba(233, 30, 99, 0.2);
+  }
+  
+  .glass-nequi-dark {
+    backdrop-filter: blur(20px) saturate(180%);
+    background-color: rgba(45, 27, 105, 0.15);
+    border: 1px solid rgba(45, 27, 105, 0.3);
+  }
+  
+  /* Sombras estilo Nequi */
+  .shadow-nequi {
+    box-shadow: 0 10px 25px -5px rgba(233, 30, 99, 0.1), 0 10px 10px -5px rgba(233, 30, 99, 0.04);
+  }
+  
+  .shadow-nequi-lg {
+    box-shadow: 0 25px 50px -12px rgba(233, 30, 99, 0.15), 0 25px 25px -12px rgba(233, 30, 99, 0.1);
+  }
+  
+  .shadow-nequi-purple {
+    box-shadow: 0 10px 25px -5px rgba(45, 27, 105, 0.15), 0 10px 10px -5px rgba(45, 27, 105, 0.08);
+  }
+  
+  /* Animaciones personalizadas */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+  
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 20px rgba(233, 30, 99, 0.3);
+    }
+    to {
+      box-shadow: 0 0 30px rgba(233, 30, 99, 0.6);
+    }
+  }
+  
+  /* Textos con gradiente Nequi */
+  .text-gradient-nequi {
+    background: linear-gradient(135deg, #E91E63 0%, #2D1B69 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .text-gradient-nequi-reverse {
+    background: linear-gradient(135deg, #2D1B69 0%, #E91E63 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
