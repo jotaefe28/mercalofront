@@ -1,23 +1,18 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Mail, Phone, MapPin, Save, Loader2 } from 'lucide-react';
+import { X, User, Mail, Phone, MapPin, Save, Loader2, Calendar, IdCard } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import { clientService } from '@/services';
+import type { CreateClientData, Client } from '@/types';
 
 interface AddClientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onClientAdded?: (client: any) => void;
+  onClientAdded?: (client: Client) => void;
 }
 
-interface ClientFormData {
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  document: string;
-  documentType: 'CC' | 'CE' | 'NIT';
-}
+interface ClientFormData extends CreateClientData {}
 
 export const AddClientModal: React.FC<AddClientModalProps> = ({
   isOpen,
@@ -31,28 +26,25 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
     handleSubmit,
     reset,
     formState: { errors }
-  } = useForm<ClientFormData>();
+  } = useForm<ClientFormData>({
+    defaultValues: {
+      document_type: 'cedula'
+    }
+  });
 
   const onSubmit = async (data: ClientFormData) => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const newClient = await clientService.createClient(data);
       
-      const newClient = {
-        id: Date.now().toString(),
-        ...data,
-        createdAt: new Date(),
-        points: 0
-      };
-
       toast.success('Cliente agregado exitosamente');
       onClientAdded?.(newClient);
       reset();
       onClose();
     } catch (error) {
-      toast.error('Error al agregar cliente');
+      console.error('Error creating client:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al agregar cliente');
     } finally {
       setIsSubmitting(false);
     }
@@ -84,7 +76,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-hidden flex flex-col"
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
@@ -96,7 +88,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                     </div>
                     <div>
                       <h2 className="text-xl font-bold">Agregar Cliente</h2>
-                      <p className="text-sm text-white/80">Registra un nuevo cliente</p>
+                      <p className="text-sm text-white/80">Registra un nuevo cliente en el sistema</p>
                     </div>
                   </div>
                   <button
@@ -114,111 +106,138 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                 <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col">
                   {/* Form Fields */}
                   <div className="flex-1 p-6 space-y-5 overflow-y-auto">
-                    {/* Nombre */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre completo *
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          {...register('name', { 
-                            required: 'El nombre es requerido',
-                            minLength: { value: 2, message: 'Mínimo 2 caracteres' }
-                          })}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
-                          placeholder="Ej: Juan Pérez"
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                      {errors.name && (
-                        <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-                      )}
-                    </div>
-
-                    {/* Email */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Correo electrónico
-                      </label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          {...register('email', { 
-                            pattern: {
-                              value: /^\S+@\S+$/i,
-                              message: 'Email inválido'
-                            }
-                          })}
-                          type="email"
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
-                          placeholder="ejemplo@correo.com"
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                      {errors.email && (
-                        <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-                      )}
-                    </div>
-
-                    {/* Teléfono */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Teléfono *
-                      </label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          {...register('phone', { 
-                            required: 'El teléfono es requerido',
-                            pattern: {
-                              value: /^[0-9+\s-()]+$/,
-                              message: 'Formato de teléfono inválido'
-                            }
-                          })}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
-                          placeholder="Ej: +57 300 123 4567"
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                      {errors.phone && (
-                        <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
-                      )}
-                    </div>
-
                     {/* Documento */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Tipo
+                          Tipo de documento *
                         </label>
-                        <select
-                          {...register('documentType')}
-                          className="w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
-                          disabled={isSubmitting}
-                        >
-                          <option value="CC">CC</option>
-                          <option value="CE">CE</option>
-                          <option value="NIT">NIT</option>
-                        </select>
+                        <div className="relative">
+                          <IdCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <select
+                            {...register('document_type', { required: 'Tipo de documento requerido' })}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all appearance-none"
+                            disabled={isSubmitting}
+                          >
+                            <option value="cedula">Cédula</option>
+                            <option value="nit">NIT</option>
+                            <option value="pasaporte">Pasaporte</option>
+                            <option value="cedula_extranjeria">Cédula de Extranjería</option>
+                          </select>
+                        </div>
+                        {errors.document_type && (
+                          <p className="text-red-500 text-xs mt-1">{errors.document_type.message}</p>
+                        )}
                       </div>
-                      <div className="col-span-2">
+                      <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Número de documento
+                          Número de documento *
                         </label>
                         <input
-                          {...register('document', { 
+                          {...register('document_number', { 
+                            required: 'Número de documento requerido',
                             pattern: {
-                              value: /^[0-9-]+$/,
-                              message: 'Solo números y guiones'
+                              value: /^[0-9A-Za-z-]+$/,
+                              message: 'Solo números, letras y guiones'
                             }
                           })}
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
-                          placeholder="123456789"
+                          placeholder="Ej: 12345678"
                           disabled={isSubmitting}
                         />
-                        {errors.document && (
-                          <p className="text-red-500 text-sm mt-1">{errors.document.message}</p>
+                        {errors.document_number && (
+                          <p className="text-red-500 text-xs mt-1">{errors.document_number.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Nombres */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Nombres *
+                        </label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            {...register('name', { 
+                              required: 'Los nombres son requeridos',
+                              minLength: { value: 2, message: 'Mínimo 2 caracteres' }
+                            })}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
+                            placeholder="Ej: Juan Carlos"
+                            disabled={isSubmitting}
+                          />
+                        </div>
+                        {errors.name && (
+                          <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Apellidos *
+                        </label>
+                        <input
+                          {...register('last_name', { 
+                            required: 'Los apellidos son requeridos',
+                            minLength: { value: 2, message: 'Mínimo 2 caracteres' }
+                          })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
+                          placeholder="Ej: Pérez García"
+                          disabled={isSubmitting}
+                        />
+                        {errors.last_name && (
+                          <p className="text-red-500 text-xs mt-1">{errors.last_name.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Contacto */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Teléfono *
+                        </label>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            {...register('phone', { 
+                              required: 'El teléfono es requerido',
+                              pattern: {
+                                value: /^\+?[0-9\s-()]+$/,
+                                message: 'Formato de teléfono inválido'
+                              }
+                            })}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
+                            placeholder="Ej: +573001234567"
+                            disabled={isSubmitting}
+                          />
+                        </div>
+                        {errors.phone && (
+                          <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Correo electrónico
+                        </label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            {...register('email', { 
+                              pattern: {
+                                value: /^\S+@\S+\.\S+$/,
+                                message: 'Email inválido'
+                              }
+                            })}
+                            type="email"
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
+                            placeholder="ejemplo@correo.com"
+                            disabled={isSubmitting}
+                          />
+                        </div>
+                        {errors.email && (
+                          <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
                         )}
                       </div>
                     </div>
@@ -234,6 +253,48 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                           {...register('address')}
                           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
                           placeholder="Calle 123 #45-67"
+                          disabled={isSubmitting}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Ubicación */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Ciudad
+                        </label>
+                        <input
+                          {...register('city')}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
+                          placeholder="Ej: Bogotá"
+                          disabled={isSubmitting}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Departamento
+                        </label>
+                        <input
+                          {...register('department')}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
+                          placeholder="Ej: Cundinamarca"
+                          disabled={isSubmitting}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Fecha de nacimiento */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Fecha de nacimiento
+                      </label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          {...register('birth_date')}
+                          type="date"
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
                           disabled={isSubmitting}
                         />
                       </div>

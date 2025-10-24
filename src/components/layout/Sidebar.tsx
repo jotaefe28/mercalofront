@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   BarChart3, 
   Calendar, 
@@ -36,20 +37,27 @@ const menuItems = [
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { 
     isSidebarCollapsed, 
     toggleSidebar, 
-    currentPage, 
-    setCurrentPage,
     isMobileMenuOpen,
     setMobileMenuOpen 
   } = useAppStore();
 
-  const handleMenuClick = (itemId: string) => {
-    setCurrentPage(itemId);
+  const handleMenuClick = (item: typeof menuItems[0]) => {
+    navigate(item.href);
     if (window.innerWidth < 768) {
       setMobileMenuOpen(false);
     }
+  };
+
+  const isActiveRoute = (href: string) => {
+    if (href === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(href);
   };
 
   return (
@@ -133,12 +141,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           <nav className="flex-1 px-3 py-4 space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = currentPage === item.id;
+              const isActive = isActiveRoute(item.href);
               
               return (
                 <div key={item.id} className="relative group">
                   <motion.button
-                    onClick={() => handleMenuClick(item.id)}
+                    onClick={() => handleMenuClick(item)}
                     className={`w-full flex items-center ${
                       isSidebarCollapsed ? 'justify-center px-3 py-3' : 'justify-start space-x-3 px-4 py-3'
                     } rounded-xl text-left transition-all duration-200 font-raleway font-medium relative ${

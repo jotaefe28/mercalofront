@@ -47,91 +47,10 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
 
   return (
     <>
-      {/* Cart Toggle Button - Mobile Mejorado */}
-      <AnimatePresence>
-        <motion.button
-          onClick={onToggle}
-          className="xl:hidden fixed bottom-8 right-8 bg-gradient-to-br from-nequi-pink via-nequi-pink-dark to-nequi-purple text-white p-5 rounded-3xl shadow-2xl z-50 border-4 border-white/20 backdrop-blur-sm"
-          whileTap={{ scale: 0.9 }}
-          whileHover={{ scale: 1.1 }}
-          animate={{ 
-            boxShadow: totalItems > 0 
-              ? "0 20px 40px rgba(255, 64, 129, 0.4), 0 0 30px rgba(255, 64, 129, 0.2)" 
-              : "0 15px 30px rgba(0, 0, 0, 0.2)",
-            y: [0, -5, 0]
-          }}
-          transition={{
-            y: {
-              duration: 2,
-              repeat: Infinity,
-              repeatType: "reverse"
-            }
-          }}
-        >
-          <ShoppingCartIcon className="w-7 h-7" />
-          
-          <AnimatePresence>
-            {totalItems > 0 && (
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                exit={{ scale: 0, rotate: 180 }}
-                className="absolute -top-3 -right-3"
-              >
-                <div className="bg-red-500 text-white text-sm rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-xl border-2 border-white">
-                  {totalItems > 99 ? '99+' : totalItems}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          {totalItems > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.8 }}
-              className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap backdrop-blur-sm"
-            >
-              <div className="font-bold">{formatPrice(totalAmount)}</div>
-              <div className="text-xs opacity-80">Toca para ver carrito</div>
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-black/80"></div>
-            </motion.div>
-          )}
-        </motion.button>
-      </AnimatePresence>
-
-      {/* Overlay - Mobile */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="xl:hidden fixed inset-0 bg-black/50 z-40"
-            onClick={onToggle}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Cart Sidebar - Completamente fijo */}
-      <motion.div
-        initial={false}
-        animate={{ 
-          x: 0,
-          opacity: window.innerWidth >= 1280 ? 1 : (isOpen ? 1 : 0),
-          scale: window.innerWidth >= 1280 ? 1 : (isOpen ? 1 : 0.95)
-        }}
-        transition={{ 
-          type: 'spring', 
-          damping: 30, 
-          stiffness: 300,
-          opacity: { duration: 0.2 },
-          scale: { duration: 0.2 }
-        }}
-        className="fixed xl:fixed top-0 right-0 h-screen w-full sm:w-96 md:w-[380px] xl:w-[420px] bg-white dark:bg-gray-800 shadow-2xl border-l-2 border-nequi-pink/20 z-[60] xl:z-40 flex flex-col"
+      {/* Cart Panel - Completamente fijo para POS */}
+      <div className="h-full w-full bg-white dark:bg-gray-800 flex flex-col"
         style={{
           background: 'linear-gradient(to bottom, #ffffff 0%, #fafafa 100%)',
-          backdropFilter: 'blur(20px)',
         }}
       >
         {/* Header optimizado - Más compacto */}
@@ -438,7 +357,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
             </div>
           </motion.div>
         )}
-      </motion.div>
+      </div>
     </>
   );
 };

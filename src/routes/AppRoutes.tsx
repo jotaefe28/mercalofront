@@ -4,8 +4,8 @@ import { AnimatePresence } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute, PublicRoute } from '@/guards';
 import { POSPage } from '@/pages/POS';
+import { InventoryPage, ClientsPage, PointsPage } from '@/pages';
 import { Reports } from '@/pages/Reports/Reports';
-import { Clients } from '@/pages/Clients/Clients';
 import { Calendar } from '@/pages/Calendar/Calendar';
 import { Settings } from '@/pages/Settings/Settings';
 import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/pages/Auth';
@@ -71,7 +71,7 @@ export const AppRoutes: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <Clients />
+                  <ClientsPage />
                 </Layout>
               </ProtectedRoute>
             }
@@ -82,6 +82,26 @@ export const AppRoutes: React.FC = () => {
               <ProtectedRoute>
                 <Layout>
                   <Calendar />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <InventoryPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/points"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <PointsPage />
                 </Layout>
               </ProtectedRoute>
             }

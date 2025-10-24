@@ -9,3 +9,6 @@ export {
   RateLimitService 
 } from './securityService';
 export type { SecurityEvent, SecurityLog, SecurityEventType } from './securityService';
+export { clientService } from './clientService';
+export { productService } from './productService';
+export { pointsService } from './pointsService';

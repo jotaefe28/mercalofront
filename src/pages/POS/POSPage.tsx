@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { UserPlus } from 'lucide-react';
-import { ProductCatalog, ShoppingCart, UserMenu, AddClientModal, SalesSummaryModal } from '@/components/pos';
-import { Header } from '@/components/layout/Header';
+import { ProductCatalog, ShoppingCart, AddClientModal, SalesSummaryModal } from '@/components/pos';
 import { NotificationContainer } from '@/components/ui/Notification';
 import { useNotifications } from '@/hooks';
+import { useLayout } from '@/contexts';
 import type { Product, CartItem } from '@/types';
 
 // Mock data que simula los productos de la imagen
@@ -84,7 +83,8 @@ export const POSPage: React.FC = () => {
   const [currentSale, setCurrentSale] = useState<any>(null);
   const [clientSearch, setClientSearch] = useState('');
   
-  const { notifications, removeNotification, success, error, warning, info } = useNotifications();
+  const { notifications, removeNotification, success, error } = useNotifications();
+  const { setRightPanelContent } = useLayout();
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -103,7 +103,7 @@ export const POSPage: React.FC = () => {
     localStorage.setItem('mercalo_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = useCallback((product: Product) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
       
@@ -122,9 +122,9 @@ export const POSPage: React.FC = () => {
     if (window.innerWidth < 1280) {
       setIsCartOpen(true);
     }
-  };
+  }, []);
 
-  const handleUpdateQuantity = (id: string, quantity: number) => {
+  const handleUpdateQuantity = useCallback((id: string, quantity: number) => {
     if (quantity === 0) {
       handleRemoveItem(id);
       return;
@@ -135,19 +135,26 @@ export const POSPage: React.FC = () => {
         item.id === id ? { ...item, quantity } : item
       )
     );
-  };
+  }, []);
 
-  const handleRemoveItem = (id: string) => {
+  const handleRemoveItem = useCallback((id: string) => {
     setCartItems(prevItems => prevItems.filter(item => item.id !== id));
-  };
+  }, []);
 
-  const handleClearCart = () => {
+  const handleClearCart = useCallback(() => {
     if (cartItems.length > 0) {
       setCartItems([]);
     }
-  };
+  }, [cartItems.length]);
 
-  const handleCheckout = () => {
+  const toggleCart = useCallback(() => {
+    setIsCartOpen(!isCartOpen);
+  }, [isCartOpen]);
+
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const handleCheckout = useCallback(() => {
     if (cartItems.length === 0) {
       error('Carrito vacío', 'Agrega productos antes de procesar la venta');
       return;
@@ -171,72 +178,53 @@ export const POSPage: React.FC = () => {
     setClientSearch('');
     
     success('¡Venta exitosa!', `Venta ${saleData.saleNumber} procesada correctamente`);
-  };
+  }, [cartItems, totalAmount, clientSearch, error, success]);
 
-  const handleAddClient = () => {
+  const handleAddClient = useCallback(() => {
     setIsAddClientModalOpen(true);
-  };
+  }, []);
 
-  const handleClientAdded = (client: any) => {
+  const handleClientAdded = useCallback((client: any) => {
     setClientSearch(client.name);
     success('Cliente agregado', `${client.name} agregado y seleccionado para la venta`);
-  };
+  }, [success]);
 
-  const toggleCart = () => {
-    setIsCartOpen(!isCartOpen);
-  };
-
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // Configurar el carrito en el panel derecho desde el inicio
+  useEffect(() => {
+    const cartComponent = (
+      <ShoppingCart
+        items={cartItems}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onClearCart={handleClearCart}
+        onCheckout={handleCheckout}
+        isOpen={true} // Siempre abierto en POS
+        onToggle={() => {}} // No toggle en POS
+      />
+    );
+    
+    setRightPanelContent(cartComponent);
+    
+    // NO limpiar el panel - debe estar siempre presente en POS
+  }, [cartItems, handleUpdateQuantity, handleRemoveItem, handleClearCart, handleCheckout, setRightPanelContent]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden relative"
-    >
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-0 xl:mr-[420px] relative z-10">
-
-
-        {/* Product Catalog */}
-        <div className="flex-1 overflow-hidden">
-          <ProductCatalog
-            products={mockProducts}
-            onAddToCart={handleAddToCart}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            onAddClient={handleAddClient}
-          />
-        </div>
-      </div>
-
-      {/* Shopping Cart Sidebar - Desktop grande */}
-      <div className="fixed top-0 right-0 h-full z-20 w-[420px] hidden xl:block">
-        <ShoppingCart
-          items={cartItems}
-          onUpdateQuantity={handleUpdateQuantity}
-          onRemoveItem={handleRemoveItem}
-          onClearCart={handleClearCart}
-          onCheckout={handleCheckout}
-          isOpen={isCartOpen}
-          onToggle={toggleCart}
+    <>
+      {/* Contenido principal - Solo el catálogo de productos ocupando todo el espacio */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="h-full"
+      >
+        <ProductCatalog
+          products={mockProducts}
+          onAddToCart={handleAddToCart}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          onAddClient={handleAddClient}
         />
-      </div>
-
-      {/* Shopping Cart Mobile y Tablet */}
-      <div className="xl:hidden">
-        <ShoppingCart
-          items={cartItems}
-          onUpdateQuantity={handleUpdateQuantity}
-          onRemoveItem={handleRemoveItem}
-          onClearCart={handleClearCart}
-          onCheckout={handleCheckout}
-          isOpen={isCartOpen}
-          onToggle={toggleCart}
-        />
-      </div>
+      </motion.div>
 
       {/* Modales */}
       <AddClientModal 
@@ -256,6 +244,6 @@ export const POSPage: React.FC = () => {
         notifications={notifications}
         onClose={removeNotification}
       />
-    </motion.div>
+    </>
   );
 };
