@@ -214,31 +214,106 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Check authentication status
   const checkAuth = async (): Promise<void> => {
-    if (!authService.isAuthenticated()) {
+    const token = authService.getAccessToken();
+    
+    dispatch({ type: 'AUTH_START' });
+
+    if (!token) {
       dispatch({ type: 'AUTH_LOGOUT' });
       return;
     }
 
-    dispatch({ type: 'AUTH_START' });
-
     try {
-      const user = await authService.getCurrentUser();
-      const token = authService.getAccessToken();
+      // If token is valid, decode payload and rehydrate user
+      if (authService.isTokenValid(token)) {
+        const payload = authService.getPayloadFromToken(token);
 
-      if (user && token) {
-        // Note: In a real app, you'd also fetch company data
-        dispatch({
-          type: 'AUTH_SUCCESS',
-          payload: {
-            user,
-            company: {} as Company, // Placeholder
-            accessToken: token,
-            refreshToken: '', // Will be handled by the service
-          },
-        });
-      } else {
-        dispatch({ type: 'AUTH_LOGOUT' });
+        if (payload) {
+          const user: User = {
+            id: payload.sub as string,
+            email: payload.email as string,
+            name: (payload.name as string) || payload.email || 'Usuario',
+            role: (payload.role as any) || 'user',
+            companyId: (payload.companyId as string) || '',
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+
+          // For now, company is minimal; in real app call authService.getCurrentUser() or /auth/me
+          const company: Company = {
+            id: (payload.companyId as string) || '',
+            name: 'Mi Tienda',
+            businessType: 'Retail',
+            nit: '',
+            address: '',
+            phone: '',
+            email: user.email,
+            plan: 'BASIC' as any,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+
+          dispatch({
+            type: 'AUTH_SUCCESS',
+            payload: {
+              user,
+              company,
+              accessToken: token,
+              refreshToken: authService.getRefreshToken() || '',
+            },
+          });
+
+          // If token is close to expiry, try to refresh proactively
+          const exp = payload.exp as number;
+          const nowSec = Math.floor(Date.now() / 1000);
+          const secondsLeft = exp - nowSec;
+
+          if (secondsLeft < 60 && authService.getRefreshToken()) {
+            try {
+              const newToken = await authService.refreshToken();
+              // update token in context
+              dispatch({
+                type: 'AUTH_SUCCESS',
+                payload: {
+                  user,
+                  company,
+                  accessToken: newToken,
+                  refreshToken: authService.getRefreshToken() || '',
+                },
+              });
+            } catch (refreshErr) {
+              console.warn('Token refresh failed during rehydrate:', refreshErr);
+            }
+          }
+
+          return;
+        }
       }
+
+      // If token invalid or payload couldn't be decoded, try server verify or logout
+      const verified = await authService.verifyToken();
+      if (verified) {
+        // If server verifies token, attempt to fetch current user
+        try {
+          const currentUser = await authService.getCurrentUser();
+          dispatch({
+            type: 'AUTH_SUCCESS',
+            payload: {
+              user: currentUser,
+              company: currentUser.company as any,
+              accessToken: token,
+              refreshToken: authService.getRefreshToken() || '',
+            },
+          });
+          return;
+        } catch (meErr) {
+          console.warn('Could not fetch /auth/me during rehydrate:', meErr);
+        }
+      }
+
+      dispatch({ type: 'AUTH_LOGOUT' });
     } catch (error: any) {
       console.error('Auth check failed:', error);
       dispatch({ type: 'AUTH_LOGOUT' });

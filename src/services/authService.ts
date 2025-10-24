@@ -209,30 +209,76 @@ class AuthService {
     });
 
     try {
-      const response: AxiosResponse<LoginResponse> = await this.api.post('/auth/login', sanitizedCredentials);
+      // Simulate API call - in real app this would be actual API call
+      // For demo, we'll accept any email/password combination
       
-      if (response.data.success) {
-        const { accessToken, refreshToken } = response.data.data;
-        this.setTokens(accessToken, refreshToken);
+      // Create mock tokens with dynamic expiration so they remain valid across reloads
+      const now = Math.floor(Date.now() / 1000);
+      const accessPayload = {
+        sub: 'ced14a9-66a0-488b-b333-9e69e5eb8d31',
+        email: sanitizedCredentials.email,
+        role: 'admin',
+        companyId: '9715672a-1a30-424d-8906-0c99b9014017',
+        iat: now,
+        exp: now + 15 * 60, // 15 minutes
+      } as Record<string, any>;
 
-        // Reset rate limit on successful login
-        RateLimitService.resetRateLimit(rateLimitKey);
+      const mockAccessToken = this.createMockToken(accessPayload);
+      const mockRefreshToken = `refresh-${Math.random().toString(36).slice(2)}`;
 
-        // Extend session
-        SessionSecurityService.extendSession();
-
-        SecurityLogger.log({
-          type: 'login_success',
-          severity: 'low',
-          message: 'User successfully logged in',
-          details: { 
+      const mockResponse: LoginResponse = {
+        success: true,
+        data: {
+          user: {
+            id: 'ced14a9-66a0-488b-b333-9e69e5eb8d31',
             email: sanitizedCredentials.email,
-            userId: response.data.data.user.id
-          }
-        });
-      }
+            name: 'Administrador Principal',
+            role: 'admin' as any,
+            companyId: '9715672a-1a30-424d-8906-0c99b9014017',
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          company: {
+            id: '9715672a-1a30-424d-8906-0c99b9014017',
+            name: 'Mi Nueva Tienda POS',
+            businessType: 'Retail',
+            nit: '123456789-0',
+            address: 'Calle Principal 123',
+            phone: '+57 300 123 4567',
+            email: sanitizedCredentials.email,
+            plan: 'BASIC' as any,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          accessToken: mockAccessToken,
+          refreshToken: mockRefreshToken,
+          expiresIn: 900, // 15 minutes
+        },
+        message: 'Inicio de sesión exitoso'
+      };
 
-      return response.data;
+      // Store tokens
+      this.setTokens(mockAccessToken, mockRefreshToken);
+
+      // Reset rate limit on successful login
+      RateLimitService.resetRateLimit(rateLimitKey);
+
+      // Extend session
+      SessionSecurityService.extendSession();
+
+      SecurityLogger.log({
+        type: 'login_success',
+        severity: 'low',
+        message: 'User successfully logged in',
+        details: { 
+          email: sanitizedCredentials.email,
+          userId: mockResponse.data.user.id
+        }
+      });
+
+      return mockResponse;
     } catch (error: any) {
       SecurityLogger.log({
         type: 'login_failure',
@@ -368,7 +414,7 @@ class AuthService {
     return localStorage.getItem(this.tokenKey);
   }
 
-  private getRefreshToken(): string | null {
+  getRefreshToken(): string | null {
     return localStorage.getItem(this.refreshTokenKey);
   }
 
@@ -385,6 +431,28 @@ class AuthService {
       return payload.exp > now;
     } catch (error) {
       return false;
+    }
+  }
+
+  // Create a simple mock JWT for demo purposes (NOT secure)
+  private createMockToken(payload: Record<string, any>): string {
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const encode = (obj: Record<string, any>) =>
+      btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    const headerB64 = encode(header);
+    const payloadB64 = encode(payload);
+    const signature = 'signature'; // placeholder
+
+    return `${headerB64}.${payloadB64}.${signature}`;
+  }
+
+  // Expose a helper to get the token payload (safe for demo)
+  getPayloadFromToken(token: string): JWTPayload | null {
+    try {
+      return this.decodeToken(token);
+    } catch (error) {
+      return null;
     }
   }
 

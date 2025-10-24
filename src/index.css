@@ -159,4 +159,36 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+  
+  /* Scrollbar personalizado */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(233, 30, 99, 0.3);
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(233, 30, 99, 0.5);
+  }
+  
+  .scrollbar-thumb-nequi-pink\/20::-webkit-scrollbar-thumb {
+    background: rgba(233, 30, 99, 0.2);
+  }
+  
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  /* Scrollbar para Firefox */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(233, 30, 99, 0.3) transparent;
+  }
 }

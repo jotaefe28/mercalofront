@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AnimatePresence } from 'framer-motion';
 import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute, PublicRoute } from '@/guards';
-import { Dashboard } from '@/pages/Dashboard/Dashboard';
+import { POSPage } from '@/pages/POS';
 import { Reports } from '@/pages/Reports/Reports';
 import { Clients } from '@/pages/Clients/Clients';
 import { Calendar } from '@/pages/Calendar/Calendar';
@@ -47,7 +47,7 @@ export const AppRoutes: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <Dashboard />
+                  <POSPage />
                 </Layout>
               </ProtectedRoute>
             }

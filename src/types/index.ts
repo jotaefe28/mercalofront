@@ -1,4 +1,5 @@
 export * from './auth';
+export * from './pos';
 
 // API related types
 export interface PaginationParams {

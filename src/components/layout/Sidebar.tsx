@@ -8,7 +8,14 @@ import {
   Users, 
   ChevronLeft,
   Menu,
-  CreditCard
+  CreditCard,
+  ShoppingCart,
+  Package,
+  TrendingUp,
+  UserCheck,
+  Star,
+  Building2,
+  UserCog
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { Button } from '@/components/ui/Button';
@@ -18,11 +25,14 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: Home, href: '/' },
-  { id: 'reports', label: 'Reportes', icon: BarChart3, href: '/reports' },
-  { id: 'clients', label: 'Clientes', icon: Users, href: '/clients' },
-  { id: 'calendar', label: 'Calendario', icon: Calendar, href: '/calendar' },
-  { id: 'settings', label: 'Configuración', icon: Settings, href: '/settings' },
+  { id: 'pos', label: 'POS / Ventas', icon: ShoppingCart, href: '/', badge: 'Activo', badgeColor: 'bg-green-500' },
+  { id: 'inventory', label: 'Inventario', icon: Package, href: '/inventory' },
+  { id: 'sales-report', label: 'Reporte de ventas', icon: TrendingUp, href: '/sales-report' },
+  { id: 'clients', label: 'Clientes', icon: UserCheck, href: '/clients' },
+  { id: 'points', label: 'Puntos', icon: Star, href: '/points' },
+  { id: 'accounts', label: 'Cuentas por Cobrar', icon: CreditCard, href: '/accounts' },
+  { id: 'company', label: 'Empresa', icon: Building2, href: '/company' },
+  { id: 'users', label: 'Usuarios', icon: UserCog, href: '/users' },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
@@ -67,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       >
         <div className="flex flex-col h-full">
           {/* Header con logo estilo Nequi */}
-          <div className="flex items-center justify-between p-6 border-b border-nequi-purple/20">
+          <div className="flex items-center justify-between p-4 border-b border-nequi-purple/20">
             <motion.div
               animate={{ opacity: isSidebarCollapsed ? 0 : 1 }}
               transition={{ duration: 0.2 }}
@@ -87,6 +97,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                     </div>
                   </div>
                 </>
+              )}
+              {isSidebarCollapsed && (
+                <div className="w-8 h-8 bg-gradient-nequi rounded-lg flex items-center justify-center shadow-nequi mx-auto">
+                  <CreditCard className="h-5 w-5 text-white" />
+                </div>
               )}
             </motion.div>
             
@@ -115,62 +130,108 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-3 py-4 space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentPage === item.id;
               
               return (
-                <motion.button
-                  key={item.id}
-                  onClick={() => handleMenuClick(item.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 group font-raleway font-medium ${
-                    isActive
-                      ? 'bg-gradient-nequi text-white shadow-nequi'
-                      : 'text-nequi-pink-light hover:bg-white/10 hover:text-white'
-                  }`}
-                  whileHover={{ scale: 1.02, x: 4 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Icon 
-                    className={`h-5 w-5 ${
-                      isActive ? 'text-white' : 'text-nequi-pink-light group-hover:text-white'
-                    }`} 
-                  />
-                  <motion.span
-                    animate={{ 
-                      opacity: isSidebarCollapsed ? 0 : 1,
-                      width: isSidebarCollapsed ? 0 : 'auto'
-                    }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden whitespace-nowrap"
+                <div key={item.id} className="relative group">
+                  <motion.button
+                    onClick={() => handleMenuClick(item.id)}
+                    className={`w-full flex items-center ${
+                      isSidebarCollapsed ? 'justify-center px-3 py-3' : 'justify-start space-x-3 px-4 py-3'
+                    } rounded-xl text-left transition-all duration-200 font-raleway font-medium relative ${
+                      isActive
+                        ? 'bg-gradient-nequi text-white shadow-nequi'
+                        : 'text-nequi-pink-light hover:bg-white/10 hover:text-white'
+                    }`}
+                    whileHover={{ scale: 1.02, x: isSidebarCollapsed ? 0 : 4 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    {!isSidebarCollapsed && item.label}
-                  </motion.span>
-                  
-                  {/* Indicador activo */}
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className="absolute right-2 w-2 h-2 bg-white rounded-full"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 0.2 }}
+                    <Icon 
+                      className={`h-5 w-5 ${
+                        isActive ? 'text-white' : 'text-nequi-pink-light group-hover:text-white'
+                      } ${isSidebarCollapsed ? 'mx-auto' : ''}`} 
                     />
+                    
+                    {!isSidebarCollapsed && (
+                      <motion.span
+                        animate={{ 
+                          opacity: isSidebarCollapsed ? 0 : 1,
+                          width: isSidebarCollapsed ? 0 : 'auto'
+                        }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden whitespace-nowrap flex-1"
+                      >
+                        {item.label}
+                      </motion.span>
+                    )}
+
+                    {/* Badge */}
+                    {!isSidebarCollapsed && item.badge && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className={`px-2 py-1 text-xs rounded-full text-white font-medium ${
+                          item.badgeColor || 'bg-nequi-pink'
+                        }`}
+                      >
+                        {item.badge}
+                      </motion.span>
+                    )}
+                    
+                    {/* Indicador activo */}
+                    {isActive && !isSidebarCollapsed && (
+                      <motion.div
+                        layoutId="activeIndicator"
+                        className="absolute right-2 w-2 h-2 bg-white rounded-full"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.2 }}
+                      />
+                    )}
+
+                    {/* Indicador activo para sidebar colapsado */}
+                    {isActive && isSidebarCollapsed && (
+                      <motion.div
+                        className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-white rounded-l-full"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.2 }}
+                      />
+                    )}
+                  </motion.button>
+
+                  {/* Tooltip para sidebar colapsado */}
+                  {isSidebarCollapsed && (
+                    <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                      <div className="bg-gray-900 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg">
+                        {item.label}
+                        {item.badge && (
+                          <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                            item.badgeColor || 'bg-nequi-pink'
+                          }`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                      <div className="absolute right-full top-1/2 transform -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
+                    </div>
                   )}
-                </motion.button>
+                </div>
               );
             })}
           </nav>
 
           {/* Footer con versión */}
-          <div className="p-4 border-t border-nequi-purple/20">
-            <motion.div
-              animate={{ opacity: isSidebarCollapsed ? 0 : 1 }}
-              transition={{ duration: 0.2 }}
-              className="text-center"
-            >
-              {!isSidebarCollapsed && (
+          <div className="p-3 border-t border-nequi-purple/20">
+            {!isSidebarCollapsed && (
+              <motion.div
+                animate={{ opacity: isSidebarCollapsed ? 0 : 1 }}
+                transition={{ duration: 0.2 }}
+                className="text-center"
+              >
                 <div className="bg-white/10 rounded-lg p-3 glass-nequi-dark">
                   <div className="text-xs text-nequi-pink-light font-raleway">
                     Versión 1.0.0
@@ -179,8 +240,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                     ¡Tu dinero seguro!
                   </div>
                 </div>
-              )}
-            </motion.div>
+              </motion.div>
+            )}
+            {isSidebarCollapsed && (
+              <div className="flex justify-center">
+                <div className="w-2 h-2 bg-nequi-pink rounded-full animate-pulse"></div>
+              </div>
+            )}
           </div>
         </div>
       </motion.aside>
