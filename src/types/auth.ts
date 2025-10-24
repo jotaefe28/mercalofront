@@ -3,37 +3,29 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
-  companyId: string;
-  avatar?: string;
-  isActive: boolean;
-  lastLogin?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  phone?: string;
+  position?: string;
+  is_active: boolean;
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface Company {
+export interface UserRole {
   id: string;
   name: string;
-  businessType: string;
-  nit: string;
-  address: string;
-  phone: string;
-  email: string;
-  logo?: string;
-  plan: PlanType;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  description?: string;
+  permissions: Permission[];
+  created_at: string;
+  updated_at: string;
 }
 
-export interface AuthState {
-  user: User | null;
-  company: Company | null;
-  accessToken: string | null;
-  refreshToken: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
+export interface Permission {
+  id: string;
+  name: string;
+  resource: string;
+  action: string;
+  description?: string;
 }
 
 export interface LoginCredentials {
@@ -43,38 +35,17 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData {
-  // User data
   name: string;
   email: string;
   password: string;
   confirmPassword: string;
-  
-  // Company data
-  companyName: string;
-  businessType: string;
-  nit: string;
-  address: string;
-  phone: string;
-  companyEmail: string;
 }
 
 export interface LoginResponse {
   success: boolean;
   data: {
     user: User;
-    company: Company;
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-  };
-  message: string;
-}
-
-export interface RefreshTokenResponse {
-  success: boolean;
-  data: {
-    accessToken: string;
-    expiresIn: number;
+    message?: string;
   };
   message: string;
 }
@@ -92,24 +63,6 @@ export interface ApiResponse<T = any> {
   errors?: AuthError[];
 }
 
-export const UserRole = {
-  ADMIN: 'admin',
-  MANAGER: 'manager',
-  CASHIER: 'cashier',
-  VIEWER: 'viewer'
-} as const;
-
-export type UserRole = typeof UserRole[keyof typeof UserRole];
-
-export const PlanType = {
-  FREE: 'free',
-  BASIC: 'basic',
-  PREMIUM: 'premium',
-  ENTERPRISE: 'enterprise'
-} as const;
-
-export type PlanType = typeof PlanType[keyof typeof PlanType];
-
 export interface PasswordResetRequest {
   email: string;
 }
@@ -126,12 +79,14 @@ export interface ChangePasswordData {
   confirmPassword: string;
 }
 
-// JWT Token payload interface
-export interface JWTPayload {
-  sub: string; // user id
-  email: string;
-  role: UserRole;
-  companyId: string;
-  iat: number;
-  exp: number;
+export interface AuthContextType {
+  user: User | null;
+  login: (credentials: LoginCredentials) => Promise<boolean>;
+  logout: () => Promise<void>;
+  register: (data: RegisterData) => Promise<boolean>;
+  forgotPassword: (data: PasswordResetRequest) => Promise<boolean>;
+  resetPassword: (data: PasswordReset) => Promise<boolean>;
+  checkAuth: () => Promise<void>;
+  isAuthenticated: boolean;
+  loading: boolean;
 }

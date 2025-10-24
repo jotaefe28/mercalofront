@@ -23,10 +23,7 @@ import {
 
 class AuthService {
   private api: AxiosInstance;
-  private readonly baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-  private readonly tokenKey = 'mercalo_access_token';
-  private readonly refreshTokenKey = 'mercalo_refresh_token';
-  private refreshPromise: Promise<string> | null = null;
+  private readonly baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
   constructor() {
     this.api = axios.create({
@@ -36,6 +33,7 @@ class AuthService {
         ...SecurityHeadersService.getSecurityHeaders(),
       },
       timeout: 10000,
+      withCredentials: true, // Enable automatic cookie handling
     });
 
     this.setupInterceptors();
@@ -69,14 +67,9 @@ class AuthService {
   }
 
   private setupInterceptors(): void {
-    // Request interceptor to add auth token and security headers
+    // Request interceptor to add security headers
     this.api.interceptors.request.use(
       (config) => {
-        const token = this.getAccessToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-
         // Add CSRF token
         const csrfHeaders = CSRFService.getCSRFHeaders();
         Object.assign(config.headers, csrfHeaders);
@@ -93,7 +86,7 @@ class AuthService {
       (error) => Promise.reject(error)
     );
 
-    // Response interceptor to handle token refresh and security validation
+    // Response interceptor to handle auth errors and security validation
     this.api.interceptors.response.use(
       (response) => {
         // Validate security headers in response
@@ -115,31 +108,17 @@ class AuthService {
       async (error) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true;
-
+        if (error.response?.status === 401) {
           SecurityLogger.log({
             type: 'token_expired',
-            severity: 'medium',
-            message: 'Access token expired, attempting refresh',
+            severity: 'high',
+            message: 'Unauthorized access, redirecting to login',
             details: { url: originalRequest.url }
           });
 
-          try {
-            const newToken = await this.handleTokenRefresh();
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            return this.api(originalRequest);
-          } catch (refreshError) {
-            SecurityLogger.log({
-              type: 'token_refresh',
-              severity: 'high',
-              message: 'Token refresh failed, forcing logout',
-            });
-
-            this.logout();
-            window.location.href = '/login';
-            return Promise.reject(refreshError);
-          }
+          this.logout();
+          window.location.href = '/login';
+          return Promise.reject(error);
         }
 
         // Log security-related errors
@@ -157,21 +136,10 @@ class AuthService {
     );
   }
 
-  private async handleTokenRefresh(): Promise<string> {
-    if (this.refreshPromise) {
-      return this.refreshPromise;
-    }
-
-    this.refreshPromise = this.refreshToken().then((newToken) => {
-      this.refreshPromise = null;
-      return newToken;
-    }).catch((error) => {
-      this.refreshPromise = null;
-      throw error;
-    });
-
-    return this.refreshPromise;
-  }
+  // Remove token refresh logic as we're using cookies
+  // private async handleTokenRefresh(): Promise<string> {
+  //   Removed - using cookies now
+  // }
 
   // Authentication methods
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
@@ -209,76 +177,29 @@ class AuthService {
     });
 
     try {
-      // Simulate API call - in real app this would be actual API call
-      // For demo, we'll accept any email/password combination
-      
-      // Create mock tokens with dynamic expiration so they remain valid across reloads
-      const now = Math.floor(Date.now() / 1000);
-      const accessPayload = {
-        sub: 'ced14a9-66a0-488b-b333-9e69e5eb8d31',
-        email: sanitizedCredentials.email,
-        role: 'admin',
-        companyId: '9715672a-1a30-424d-8906-0c99b9014017',
-        iat: now,
-        exp: now + 15 * 60, // 15 minutes
-      } as Record<string, any>;
+      const response: AxiosResponse<LoginResponse> = await this.api.post('/auth/login', sanitizedCredentials);
 
-      const mockAccessToken = this.createMockToken(accessPayload);
-      const mockRefreshToken = `refresh-${Math.random().toString(36).slice(2)}`;
+      if (response.data.success) {
+        // Reset rate limit on successful login
+        RateLimitService.resetRateLimit(rateLimitKey);
 
-      const mockResponse: LoginResponse = {
-        success: true,
-        data: {
-          user: {
-            id: 'ced14a9-66a0-488b-b333-9e69e5eb8d31',
+        // Extend session
+        SessionSecurityService.extendSession();
+
+        SecurityLogger.log({
+          type: 'login_success',
+          severity: 'low',
+          message: 'User successfully logged in',
+          details: { 
             email: sanitizedCredentials.email,
-            name: 'Administrador Principal',
-            role: 'admin' as any,
-            companyId: '9715672a-1a30-424d-8906-0c99b9014017',
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-          company: {
-            id: '9715672a-1a30-424d-8906-0c99b9014017',
-            name: 'Mi Nueva Tienda POS',
-            businessType: 'Retail',
-            nit: '123456789-0',
-            address: 'Calle Principal 123',
-            phone: '+57 300 123 4567',
-            email: sanitizedCredentials.email,
-            plan: 'BASIC' as any,
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-          accessToken: mockAccessToken,
-          refreshToken: mockRefreshToken,
-          expiresIn: 900, // 15 minutes
-        },
-        message: 'Inicio de sesión exitoso'
-      };
+            userId: response.data.data.user.id
+          }
+        });
 
-      // Store tokens
-      this.setTokens(mockAccessToken, mockRefreshToken);
+        return response.data;
+      }
 
-      // Reset rate limit on successful login
-      RateLimitService.resetRateLimit(rateLimitKey);
-
-      // Extend session
-      SessionSecurityService.extendSession();
-
-      SecurityLogger.log({
-        type: 'login_success',
-        severity: 'low',
-        message: 'User successfully logged in',
-        details: { 
-          email: sanitizedCredentials.email,
-          userId: mockResponse.data.user.id
-        }
-      });
-
-      return mockResponse;
+      throw new Error('Login failed');
     } catch (error: any) {
       SecurityLogger.log({
         type: 'login_failure',
@@ -314,45 +235,17 @@ class AuthService {
     });
 
     try {
-      const refreshToken = this.getRefreshToken();
-      if (refreshToken) {
-        await this.api.post('/auth/logout', { refreshToken });
-      }
+      await this.api.post('/auth/logout');
     } catch (error) {
       // Continue with logout even if server request fails
       console.error('Error during server logout:', error);
     } finally {
-      this.clearTokens();
       CSRFService.removeCSRFToken();
       SessionSecurityService.destroySession();
     }
   }
 
-  async refreshToken(): Promise<string> {
-    const refreshToken = this.getRefreshToken();
-    
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    try {
-      const response: AxiosResponse<RefreshTokenResponse> = await axios.post(
-        `${this.baseURL}/auth/refresh`,
-        { refreshToken }
-      );
-
-      if (response.data.success) {
-        const { accessToken } = response.data.data;
-        this.setAccessToken(accessToken);
-        return accessToken;
-      }
-
-      throw new Error('Failed to refresh token');
-    } catch (error: any) {
-      this.clearTokens();
-      throw this.handleError(error);
-    }
-  }
+  // Removed refreshToken method - using cookies now
 
   async verifyToken(): Promise<boolean> {
     try {
@@ -400,28 +293,9 @@ class AuthService {
     }
   }
 
-  // Token management
-  private setTokens(accessToken: string, refreshToken: string): void {
-    localStorage.setItem(this.tokenKey, accessToken);
-    localStorage.setItem(this.refreshTokenKey, refreshToken);
-  }
-
-  private setAccessToken(accessToken: string): void {
-    localStorage.setItem(this.tokenKey, accessToken);
-  }
-
-  getAccessToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
-  }
-
-  getRefreshToken(): string | null {
-    return localStorage.getItem(this.refreshTokenKey);
-  }
-
-  private clearTokens(): void {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.refreshTokenKey);
-  }
+  // Token management removed - using cookies now
+  // All token-related methods have been removed as authentication
+  // is now handled via HTTP-only cookies from the server
 
   // Token validation
   isTokenValid(token: string): boolean {
@@ -481,9 +355,9 @@ class AuthService {
     }
   }
 
-  isAuthenticated(): boolean {
-    const token = this.getAccessToken();
-    return token ? this.isTokenValid(token) : false;
+  async isAuthenticated(): Promise<boolean> {
+    // Since we're using cookies, we need to verify with the server
+    return await this.verifyToken();
   }
 
   // Error handling

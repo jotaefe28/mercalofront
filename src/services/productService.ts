@@ -1,13 +1,14 @@
 import type { Product, CreateProductData, UpdateProductData, ProductFilters, ProductStats, PaginatedResponse } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 class ProductService {
-  private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('auth_token');
+  private getRequestOptions(): RequestInit {
     return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      credentials: 'include', // Include cookies
+      headers: {
+        'Content-Type': 'application/json',
+      },
     };
   }
 
@@ -15,7 +16,7 @@ class ProductService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/products`, {
         method: 'POST',
-        headers: this.getAuthHeaders(),
+        ...this.getRequestOptions(),
         body: JSON.stringify(productData)
       });
 
@@ -54,7 +55,7 @@ class ProductService {
 
       const response = await fetch(`${API_BASE_URL}/api/products?${params}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -77,7 +78,7 @@ class ProductService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -100,7 +101,7 @@ class ProductService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
         method: 'PUT',
-        headers: this.getAuthHeaders(),
+        ...this.getRequestOptions(),
         body: JSON.stringify(productData)
       });
 
@@ -124,7 +125,7 @@ class ProductService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
         method: 'DELETE',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -144,7 +145,7 @@ class ProductService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/products/${id}/stock`, {
         method: 'PATCH',
-        headers: this.getAuthHeaders(),
+        ...this.getRequestOptions(),
         body: JSON.stringify({ quantity, operation })
       });
 
@@ -168,7 +169,7 @@ class ProductService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/products/stats`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -196,7 +197,7 @@ class ProductService {
 
       const response = await fetch(`${API_BASE_URL}/api/products/search?${params}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -219,7 +220,7 @@ class ProductService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/products/categories`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -242,7 +243,7 @@ class ProductService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/products/suppliers`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {

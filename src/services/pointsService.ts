@@ -7,14 +7,15 @@ import type {
   PaginatedResponse
 } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 class PointsService {
-  private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('auth_token');
+  private getRequestOptions(): RequestInit {
     return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      credentials: 'include', // Include cookies
+      headers: {
+        'Content-Type': 'application/json',
+      },
     };
   }
 
@@ -23,7 +24,7 @@ class PointsService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/points/stats`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -64,7 +65,7 @@ class PointsService {
 
       const response = await fetch(`${API_BASE_URL}/api/points/transactions?${params}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -88,7 +89,7 @@ class PointsService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/points/client/search`, {
         method: 'POST',
-        headers: this.getAuthHeaders(),
+        ...this.getRequestOptions(),
         body: JSON.stringify({ document_number: documentNumber })
       });
 
@@ -120,7 +121,7 @@ class PointsService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/points/client/${clientId}/balance`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -144,7 +145,7 @@ class PointsService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/points/config`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -167,7 +168,7 @@ class PointsService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/points/config`, {
         method: 'PUT',
-        headers: this.getAuthHeaders(),
+        ...this.getRequestOptions(),
         body: JSON.stringify(config)
       });
 
@@ -192,7 +193,7 @@ class PointsService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/points/redeem`, {
         method: 'POST',
-        headers: this.getAuthHeaders(),
+        ...this.getRequestOptions(),
         body: JSON.stringify({
           client_id: clientId,
           points,
@@ -220,7 +221,7 @@ class PointsService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/points/expire`, {
         method: 'POST',
-        headers: this.getAuthHeaders(),
+        ...this.getRequestOptions(),
         body: JSON.stringify({
           client_id: clientId,
           points,
@@ -271,7 +272,7 @@ class PointsService {
 
       const response = await fetch(`${API_BASE_URL}/api/points/report?${params}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -304,7 +305,7 @@ class PointsService {
 
       const response = await fetch(`${API_BASE_URL}/api/points/export?${params}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {

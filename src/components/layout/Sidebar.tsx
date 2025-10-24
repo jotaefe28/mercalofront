@@ -33,7 +33,8 @@ const menuItems = [
   { id: 'points', label: 'Puntos', icon: Star, href: '/points' },
   { id: 'accounts', label: 'Cuentas por Cobrar', icon: CreditCard, href: '/accounts' },
   { id: 'company', label: 'Empresa', icon: Building2, href: '/company' },
-  { id: 'users', label: 'Usuarios', icon: UserCog, href: '/users' },
+  { id: 'users', label: 'Usuarios', icon: Users, href: '/users' },
+  { id: 'roles', label: 'Roles y Permisos', icon: UserCog, href: '/roles' },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ className }) => {

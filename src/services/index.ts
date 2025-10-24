@@ -12,3 +12,6 @@ export type { SecurityEvent, SecurityLog, SecurityEventType } from './securitySe
 export { clientService } from './clientService';
 export { productService } from './productService';
 export { pointsService } from './pointsService';
+export { userService } from './userService';
+export { companyService } from './companyService';
+export { accountsService } from './accountsService';

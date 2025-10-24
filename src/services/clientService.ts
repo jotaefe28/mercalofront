@@ -9,14 +9,15 @@ import type {
   PaginatedResponse
 } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 class ClientService {
-  private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('auth_token');
+  private getRequestOptions(): RequestInit {
     return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      credentials: 'include', // Include cookies
+      headers: {
+        'Content-Type': 'application/json',
+      },
     };
   }
 
@@ -25,7 +26,7 @@ class ClientService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/clients`, {
         method: 'POST',
-        headers: this.getAuthHeaders(),
+        ...this.getRequestOptions(),
         body: JSON.stringify(clientData)
       });
 
@@ -67,7 +68,7 @@ class ClientService {
 
       const response = await fetch(`${API_BASE_URL}/api/clients?${params}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -90,7 +91,7 @@ class ClientService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/clients/${id}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -113,7 +114,7 @@ class ClientService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/clients/${id}`, {
         method: 'PUT',
-        headers: this.getAuthHeaders(),
+        ...this.getRequestOptions(),
         body: JSON.stringify(clientData)
       });
 
@@ -137,7 +138,7 @@ class ClientService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/clients/${id}`, {
         method: 'DELETE',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -158,7 +159,7 @@ class ClientService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/clients/stats`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -193,7 +194,7 @@ class ClientService {
         `${API_BASE_URL}/api/clients/${clientId}/purchases?${params}`, 
         {
           method: 'GET',
-          headers: this.getAuthHeaders()
+          ...this.getRequestOptions()
         }
       );
 
@@ -229,7 +230,7 @@ class ClientService {
         `${API_BASE_URL}/api/clients/${clientId}/points?${params}`, 
         {
           method: 'GET',
-          headers: this.getAuthHeaders()
+          ...this.getRequestOptions()
         }
       );
 
@@ -257,7 +258,7 @@ class ClientService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/clients/${clientId}/points/adjust`, {
         method: 'POST',
-        headers: this.getAuthHeaders(),
+        ...this.getRequestOptions(),
         body: JSON.stringify({ points, description })
       });
 
@@ -287,7 +288,7 @@ class ClientService {
 
       const response = await fetch(`${API_BASE_URL}/api/clients/search?${params}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {
@@ -310,7 +311,7 @@ class ClientService {
     try {
       const response = await fetch(`${API_BASE_URL}/api/clients/validate-document`, {
         method: 'POST',
-        headers: this.getAuthHeaders(),
+        ...this.getRequestOptions(),
         body: JSON.stringify({ document_type: documentType, document_number: documentNumber })
       });
 
@@ -345,7 +346,7 @@ class ClientService {
 
       const response = await fetch(`${API_BASE_URL}/api/clients/export?${params}`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        ...this.getRequestOptions()
       });
 
       if (!response.ok) {

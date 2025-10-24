@@ -5,3 +5,7 @@ export { Calendar } from './Calendar/Calendar';
 export { Settings } from './Settings/Settings';
 export { InventoryPage } from './Inventory';
 export { PointsPage } from './Points/PointsPage';
+export { UsersPage } from './Users';
+export { RolesPage } from './Roles';
+export { default as CompanyPage } from './Company/CompanyPage';
+export { AccountsPage } from './Accounts';
