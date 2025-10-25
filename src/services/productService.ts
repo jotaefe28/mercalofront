@@ -1,6 +1,6 @@
 import type { Product, CreateProductData, UpdateProductData, ProductFilters, ProductStats, PaginatedResponse } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
 
 class ProductService {
   private getRequestOptions(): RequestInit {

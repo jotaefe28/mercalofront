@@ -9,7 +9,7 @@ import type {
   PaginatedResponse
 } from '@/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
 
 class ClientService {
   private getRequestOptions(): RequestInit {
@@ -24,7 +24,7 @@ class ClientService {
   // CRUD Operations
   async createClient(clientData: CreateClientData): Promise<Client> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/clients`, {
+      const response = await fetch(`${API_BASE_URL}/clients`, {
         method: 'POST',
         ...this.getRequestOptions(),
         body: JSON.stringify(clientData)
@@ -66,7 +66,7 @@ class ClientService {
         });
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/clients?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/clients?${params}`, {
         method: 'GET',
         ...this.getRequestOptions()
       });
@@ -89,7 +89,7 @@ class ClientService {
 
   async getClientById(id: string): Promise<Client> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/clients/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
         method: 'GET',
         ...this.getRequestOptions()
       });
@@ -112,7 +112,7 @@ class ClientService {
 
   async updateClient(id: string, clientData: UpdateClientData): Promise<Client> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/clients/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
         method: 'PUT',
         ...this.getRequestOptions(),
         body: JSON.stringify(clientData)
@@ -136,7 +136,7 @@ class ClientService {
 
   async deleteClient(id: string): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/clients/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
         method: 'DELETE',
         ...this.getRequestOptions()
       });
@@ -157,7 +157,7 @@ class ClientService {
   // Statistics and Analytics
   async getClientStats(): Promise<ClientStats> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/clients/stats`, {
+      const response = await fetch(`${API_BASE_URL}/clients/stats`, {
         method: 'GET',
         ...this.getRequestOptions()
       });
@@ -191,7 +191,7 @@ class ClientService {
       });
 
       const response = await fetch(
-        `${API_BASE_URL}/api/clients/${clientId}/purchases?${params}`, 
+        `${API_BASE_URL}/clients/${clientId}/purchases?${params}`, 
         {
           method: 'GET',
           ...this.getRequestOptions()
@@ -227,7 +227,7 @@ class ClientService {
       });
 
       const response = await fetch(
-        `${API_BASE_URL}/api/clients/${clientId}/points?${params}`, 
+        `${API_BASE_URL}/clients/${clientId}/points?${params}`, 
         {
           method: 'GET',
           ...this.getRequestOptions()
@@ -256,7 +256,7 @@ class ClientService {
     description: string
   ): Promise<ClientPointsTransaction> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/clients/${clientId}/points/adjust`, {
+      const response = await fetch(`${API_BASE_URL}/clients/${clientId}/points/adjust`, {
         method: 'POST',
         ...this.getRequestOptions(),
         body: JSON.stringify({ points, description })
@@ -286,7 +286,7 @@ class ClientService {
         limit: limit.toString()
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/clients/search?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/clients/search?${params}`, {
         method: 'GET',
         ...this.getRequestOptions()
       });
@@ -309,7 +309,7 @@ class ClientService {
 
   async validateDocument(documentType: string, documentNumber: string): Promise<boolean> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/clients/validate-document`, {
+      const response = await fetch(`${API_BASE_URL}/clients/validate-document`, {
         method: 'POST',
         ...this.getRequestOptions(),
         body: JSON.stringify({ document_type: documentType, document_number: documentNumber })
@@ -344,7 +344,7 @@ class ClientService {
         });
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/clients/export?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/clients/export?${params}`, {
         method: 'GET',
         ...this.getRequestOptions()
       });

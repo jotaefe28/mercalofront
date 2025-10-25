@@ -15,7 +15,7 @@ import type {
   BusinessHours
 } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
 
 // Create axios instance with credentials
 const api = axios.create({
@@ -29,17 +29,17 @@ const api = axios.create({
 export const companyService = {
   // Company CRUD operations
   async getCompany(): Promise<Company> {
-    const response = await api.get('/api/company');
+    const response = await api.get('/company');
     return response.data.data;
   },
 
   async createCompany(companyData: CreateCompanyData): Promise<Company> {
-    const response = await api.post('/api/company', companyData);
+    const response = await api.post('/company', companyData);
     return response.data.data;
   },
 
   async updateCompany(companyData: UpdateCompanyData): Promise<Company> {
-    const response = await api.put('/api/company', companyData);
+    const response = await api.put('/company', companyData);
     return response.data.data;
   },
 
@@ -47,7 +47,7 @@ export const companyService = {
     const formData = new FormData();
     formData.append('logo', file);
 
-    const response = await api.post('/api/company/logo', formData, {
+    const response = await api.post('/company/logo', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -56,29 +56,29 @@ export const companyService = {
   },
 
   async deleteLogo(): Promise<void> {
-    await api.delete('/api/company/logo');
+    await api.delete('/company/logo');
   },
 
   // Company Settings
   async getCompanySettings(): Promise<CompanySettings> {
-    const response = await api.get('/api/company/settings');
+    const response = await api.get('/company/settings');
     return response.data.data;
   },
 
   async updateCompanySettings(settings: Partial<CompanySettings>): Promise<CompanySettings> {
-    const response = await api.put('/api/company/settings', settings);
+    const response = await api.put('/company/settings', settings);
     return response.data.data;
   },
 
   async updateBusinessHours(businessHours: Record<string, BusinessHours>): Promise<CompanySettings> {
-    const response = await api.put('/api/company/settings/business-hours', {
+    const response = await api.put('/company/settings/business-hours', {
       business_hours: businessHours
     });
     return response.data.data;
   },
 
   async updateNotificationPreferences(preferences: CompanySettings['notification_preferences']): Promise<CompanySettings> {
-    const response = await api.put('/api/company/settings/notifications', {
+    const response = await api.put('/company/settings/notifications', {
       notification_preferences: preferences
     });
     return response.data.data;
@@ -86,33 +86,33 @@ export const companyService = {
 
   // Payment Methods CRUD
   async getPaymentMethods(filters?: PaymentMethodFilters & PaginationParams): Promise<PaginatedResponse<PaymentMethod>> {
-    const response = await api.get('/api/company/payment-methods', {
+    const response = await api.get('/company/payment-methods', {
       params: filters,
     });
     return response.data;
   },
 
   async getPaymentMethodById(id: string): Promise<PaymentMethod> {
-    const response = await api.get(`/api/company/payment-methods/${id}`);
+    const response = await api.get(`/company/payment-methods/${id}`);
     return response.data.data;
   },
 
   async createPaymentMethod(paymentMethodData: CreatePaymentMethodData): Promise<PaymentMethod> {
-    const response = await api.post('/api/company/payment-methods', paymentMethodData);
+    const response = await api.post('/company/payment-methods', paymentMethodData);
     return response.data.data;
   },
 
   async updatePaymentMethod(id: string, paymentMethodData: UpdatePaymentMethodData): Promise<PaymentMethod> {
-    const response = await api.put(`/api/company/payment-methods/${id}`, paymentMethodData);
+    const response = await api.put(`/company/payment-methods/${id}`, paymentMethodData);
     return response.data.data;
   },
 
   async deletePaymentMethod(id: string): Promise<void> {
-    await api.delete(`/api/company/payment-methods/${id}`);
+    await api.delete(`/company/payment-methods/${id}`);
   },
 
   async togglePaymentMethodStatus(id: string, isActive: boolean): Promise<PaymentMethod> {
-    const response = await api.patch(`/api/company/payment-methods/${id}/status`, {
+    const response = await api.patch(`/company/payment-methods/${id}/status`, {
       is_active: isActive
     });
     return response.data.data;
@@ -126,7 +126,7 @@ export const companyService = {
       commission_rate?: number;
     }
   ): Promise<PaymentMethod[]> {
-    const response = await api.patch('/api/company/payment-methods/bulk-update', {
+    const response = await api.patch('/company/payment-methods/bulk-update', {
       payment_method_ids: paymentMethodIds,
       ...updateData,
     });
@@ -134,14 +134,14 @@ export const companyService = {
   },
 
   async bulkDeletePaymentMethods(paymentMethodIds: string[]): Promise<void> {
-    await api.delete('/api/company/payment-methods/bulk-delete', {
+    await api.delete('/company/payment-methods/bulk-delete', {
       data: { payment_method_ids: paymentMethodIds },
     });
   },
 
   // Company Statistics
   async getCompanyStats(): Promise<CompanyStats> {
-    const response = await api.get('/api/company/stats');
+    const response = await api.get('/company/stats');
     return response.data.data;
   },
 
@@ -167,7 +167,7 @@ export const companyService = {
       percentage: number;
     }>;
   }> {
-    const response = await api.get('/api/company/payment-methods/stats', {
+    const response = await api.get('/company/payment-methods/stats', {
       params: filters,
     });
     return response.data.data;
@@ -179,19 +179,19 @@ export const companyService = {
     is_active?: boolean;
     limit?: number;
   }): Promise<PaymentMethod[]> {
-    const response = await api.get('/api/company/payment-methods/search', {
+    const response = await api.get('/company/payment-methods/search', {
       params: { q: query, ...filters },
     });
     return response.data.data;
   },
 
   async getPaymentMethodsByType(type: PaymentMethod['type']): Promise<PaymentMethod[]> {
-    const response = await api.get(`/api/company/payment-methods/type/${type}`);
+    const response = await api.get(`/company/payment-methods/type/${type}`);
     return response.data.data;
   },
 
   async getActivePaymentMethods(): Promise<PaymentMethod[]> {
-    const response = await api.get('/api/company/payment-methods/active');
+    const response = await api.get('/company/payment-methods/active');
     return response.data.data;
   },
 
@@ -201,25 +201,25 @@ export const companyService = {
     company_name?: string;
     message?: string;
   }> {
-    const response = await api.post('/api/company/validate-nit', { nit });
+    const response = await api.post('/company/validate-nit', { nit });
     return response.data.data;
   },
 
   async checkCompanyExists(): Promise<{ exists: boolean }> {
-    const response = await api.get('/api/company/exists');
+    const response = await api.get('/company/exists');
     return response.data.data;
   },
 
   // Export functionality
   async exportCompanyData(): Promise<Blob> {
-    const response = await api.get('/api/company/export', {
+    const response = await api.get('/company/export', {
       responseType: 'blob',
     });
     return response.data;
   },
 
   async exportPaymentMethods(filters?: PaymentMethodFilters): Promise<Blob> {
-    const response = await api.get('/api/company/payment-methods/export', {
+    const response = await api.get('/company/payment-methods/export', {
       params: filters,
       responseType: 'blob',
     });
@@ -237,7 +237,7 @@ export const companyService = {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await api.post('/api/company/payment-methods/import', formData, {
+    const response = await api.post('/company/payment-methods/import', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -252,7 +252,7 @@ export const companyService = {
     size: number;
     created_at: string;
   }> {
-    const response = await api.post('/api/company/backup');
+    const response = await api.post('/company/backup');
     return response.data.data;
   },
 
@@ -263,23 +263,23 @@ export const companyService = {
     type: 'manual' | 'automatic';
     created_at: string;
   }>> {
-    const response = await api.get('/api/company/backups');
+    const response = await api.get('/company/backups');
     return response.data.data;
   },
 
   async downloadBackup(backupId: string): Promise<Blob> {
-    const response = await api.get(`/api/company/backups/${backupId}/download`, {
+    const response = await api.get(`/company/backups/${backupId}/download`, {
       responseType: 'blob',
     });
     return response.data;
   },
 
   async deleteBackup(backupId: string): Promise<void> {
-    await api.delete(`/api/company/backups/${backupId}`);
+    await api.delete(`/company/backups/${backupId}`);
   },
 
   async restoreBackup(backupId: string): Promise<void> {
-    await api.post(`/api/company/backups/${backupId}/restore`);
+    await api.post(`/company/backups/${backupId}/restore`);
   },
 
   // Integration utilities
@@ -288,12 +288,12 @@ export const companyService = {
     message: string;
     details?: Record<string, any>;
   }> {
-    const response = await api.post(`/api/company/payment-methods/${paymentMethodId}/test`);
+    const response = await api.post(`/company/payment-methods/${paymentMethodId}/test`);
     return response.data.data;
   },
 
   async syncPaymentMethodData(paymentMethodId: string): Promise<PaymentMethod> {
-    const response = await api.post(`/api/company/payment-methods/${paymentMethodId}/sync`);
+    const response = await api.post(`/company/payment-methods/${paymentMethodId}/sync`);
     return response.data.data;
   },
 
@@ -307,7 +307,7 @@ export const companyService = {
     settings: CompanySettings;
     payment_methods: PaymentMethod[];
   }> {
-    const response = await api.post('/api/company/onboarding', data);
+    const response = await api.post('/company/onboarding', data);
     return response.data.data;
   },
 
@@ -317,7 +317,7 @@ export const companyService = {
     pending_steps: string[];
     progress_percentage: number;
   }> {
-    const response = await api.get('/api/company/onboarding/status');
+    const response = await api.get('/company/onboarding/status');
     return response.data.data;
   },
 
@@ -329,7 +329,7 @@ export const companyService = {
     tax_rate: number;
     tax_details: Record<string, any>;
   }> {
-    const response = await api.post('/api/company/calculate-tax', {
+    const response = await api.post('/company/calculate-tax', {
       amount,
       tax_type: taxType
     });
@@ -349,7 +349,7 @@ export const companyService = {
       authorized_to: number;
     };
   }> {
-    const response = await api.get('/api/company/fiscal-info');
+    const response = await api.get('/company/fiscal-info');
     return response.data.data;
   },
 
@@ -360,7 +360,7 @@ export const companyService = {
     authorized_to?: number;
     fiscal_responsibilities?: string[];
   }): Promise<void> {
-    await api.put('/api/company/fiscal-info', fiscalData);
+    await api.put('/company/fiscal-info', fiscalData);
   }
 };
 
