@@ -354,7 +354,7 @@ export const PointsPage: React.FC = () => {
                         <p className="text-sm font-medium text-gray-900">
                           {earner.client.name} {earner.client.last_name}
                         </p>
-                        <p className="text-xs text-gray-500">{earner.client.document_number}</p>
+                        <p className="text-xs text-gray-500">{earner.client.document}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -417,7 +417,7 @@ export const PointsPage: React.FC = () => {
                   <h4 className="font-medium text-gray-900 mb-3">Datos Personales</h4>
                   <div className="space-y-2">
                     <p><span className="text-gray-600">Nombre:</span> {selectedClient.name} {selectedClient.last_name}</p>
-                    <p><span className="text-gray-600">Documento:</span> {selectedClient.document_type.toUpperCase()} {selectedClient.document_number}</p>
+                    <p><span className="text-gray-600">Documento:</span> {selectedClient.document_type.toUpperCase()} {selectedClient.document}</p>
                     <p><span className="text-gray-600">Teléfono:</span> {selectedClient.phone}</p>
                     {selectedClient.email && (
                       <p><span className="text-gray-600">Email:</span> {selectedClient.email}</p>

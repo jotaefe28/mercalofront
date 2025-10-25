@@ -90,7 +90,7 @@ class PointsService {
       const response = await fetch(`${API_BASE_URL}/api/points/client/search`, {
         method: 'POST',
         ...this.getRequestOptions(),
-        body: JSON.stringify({ document_number: documentNumber })
+        body: JSON.stringify({ document: documentNumber })
       });
 
       if (response.status === 404) {

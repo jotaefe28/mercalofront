@@ -16,7 +16,7 @@ interface RedeemPointsModalProps {
 }
 
 interface RedemptionFormData {
-  document_number: string;
+  document: string;
   points_to_redeem: number;
 }
 
@@ -127,7 +127,7 @@ const RedeemPointsModal: React.FC<RedeemPointsModalProps> = ({
   };
 
   const handleDocumentSearch = () => {
-    const documentNumber = watch('document_number');
+    const documentNumber = watch('document');
     searchClient(documentNumber);
   };
 
@@ -196,13 +196,13 @@ const RedeemPointsModal: React.FC<RedeemPointsModalProps> = ({
                     </label>
                     <Input
                       type="text"
-                      {...register('document_number', {
+                      {...register('document', {
                         required: 'Este campo es requerido'
                       })}
                       placeholder="Ingrese el número de documento"
                     />
-                    {errors.document_number && (
-                      <p className="text-sm text-red-600 mt-1">{errors.document_number.message}</p>
+                    {errors.document && (
+                      <p className="text-sm text-red-600 mt-1">{errors.document.message}</p>
                     )}
                   </div>
                   <div className="flex items-end">
@@ -239,7 +239,7 @@ const RedeemPointsModal: React.FC<RedeemPointsModalProps> = ({
                     </div>
                     <div>
                       <span className="text-gray-600">Documento:</span>
-                      <p className="font-medium">{selectedClient.document_number}</p>
+                      <p className="font-medium">{selectedClient.document}</p>
                     </div>
                     <div>
                       <span className="text-gray-600">Puntos disponibles:</span>

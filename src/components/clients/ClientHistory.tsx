@@ -141,7 +141,7 @@ export const ClientHistory: React.FC<ClientHistoryProps> = ({ client, onBack }) 
               Historial de {client.name} {client.last_name}
             </h1>
             <p className="text-gray-600">
-              {client.document_type.toUpperCase()}: {client.document_number}
+              {client.document_type.toUpperCase()}: {client.document}
             </p>
           </div>
         </div>

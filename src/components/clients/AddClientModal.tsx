@@ -10,14 +10,13 @@ import {
   Loader2, 
   Calendar, 
   IdCard,
-  FileText,
   UserPlus,
   Edit
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { clientService } from '@/services';
-import type { CreateClientData, UpdateClientData, Client } from '@/types';
+import type { CreateClientData, Client } from '@/types';
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -26,9 +25,17 @@ interface AddClientModalProps {
   editClient?: Client | null;
 }
 
-interface ClientFormData extends CreateClientData {
-  status?: 'active' | 'inactive' | 'blocked';
-  preferred_payment_method?: string;
+interface ClientFormData {
+  name: string;
+  email?: string;
+  phone: string;
+  address?: string;
+  city?: string;
+  birth_date?: string;
+  // Campos auxiliares para el formulario
+  document_type?: 'cedula' | 'nit' | 'pasaporte' | 'cedula_extranjeria';
+  document_number?: string;
+  last_name?: string;
 }
 
 export const AddClientModal: React.FC<AddClientModalProps> = ({
@@ -55,12 +62,24 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
 
   useEffect(() => {
     if (isEditing && editClient) {
+      // Parse document field to extract number (sin tipo)
+      const documentNumber = editClient.document || '';
+      
+      // Parse name field to extract first and last name
+      const nameParts = editClient.name?.split(' ') || [''];
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
       // Fill form with edit data
-      Object.entries(editClient).forEach(([key, value]) => {
-        if (key in editClient && value !== null) {
-          setValue(key as keyof ClientFormData, value);
-        }
-      });
+      setValue('name', firstName);
+      setValue('last_name', lastName);
+      setValue('email', editClient.email || '');
+      setValue('phone', editClient.phone || '');
+      setValue('document_type', 'cedula'); // Valor por defecto
+      setValue('document_number', documentNumber);
+      setValue('address', editClient.address || '');
+      setValue('city', editClient.city || '');
+      setValue('birth_date', editClient.birth_date || '');
     } else {
       // Reset form for new client
       reset({
@@ -73,13 +92,24 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
     setIsSubmitting(true);
     
     try {
+      // Combinar los campos para crear el documento y nombre completo
+      const clientData: CreateClientData = {
+        name: `${data.name} ${data.last_name || ''}`.trim(),
+        email: data.email,
+        phone: data.phone,
+        document: data.document_number || '',
+        address: data.address,
+        city: data.city,
+        birth_date: data.birth_date
+      };
+      
       let savedClient: Client;
       
       if (isEditing && editClient) {
-        savedClient = await clientService.updateClient(editClient.id, data as UpdateClientData);
+        savedClient = await clientService.updateClient(editClient.id, clientData as any);
         toast.success('Cliente actualizado exitosamente');
       } else {
-        savedClient = await clientService.createClient(data);
+        savedClient = await clientService.createClient(clientData);
         toast.success('Cliente creado exitosamente');
       }
       
@@ -205,7 +235,9 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                               },
                               onBlur: (e) => {
                                 const documentType = watch('document_type');
-                                validateDocument(documentType, e.target.value);
+                                if (documentType) {
+                                  validateDocument(documentType, e.target.value);
+                                }
                               }
                             })}
                             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
@@ -274,22 +306,6 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                             />
                           </div>
                         </div>
-                        {isEditing && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Estado del cliente
-                            </label>
-                            <select
-                              {...register('status')}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all appearance-none"
-                              disabled={isSubmitting}
-                            >
-                              <option value="active">Activo</option>
-                              <option value="inactive">Inactivo</option>
-                              <option value="blocked">Bloqueado</option>
-                            </select>
-                          </div>
-                        )}
                       </div>
                     </div>
 
@@ -374,57 +390,6 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                             placeholder="Ej: Bogotá"
                             disabled={isSubmitting}
                           />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Departamento
-                          </label>
-                          <input
-                            {...register('department')}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
-                            placeholder="Ej: Cundinamarca"
-                            disabled={isSubmitting}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Información Adicional */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Adicional</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {isEditing && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Método de pago preferido
-                            </label>
-                            <select
-                              {...register('preferred_payment_method')}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all appearance-none"
-                              disabled={isSubmitting}
-                            >
-                              <option value="">Seleccionar método</option>
-                              <option value="cash">Efectivo</option>
-                              <option value="card">Tarjeta</option>
-                              <option value="digital">Pago Digital</option>
-                              <option value="points">Puntos</option>
-                            </select>
-                          </div>
-                        )}
-                        <div className={isEditing ? '' : 'md:col-span-2'}>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Notas
-                          </label>
-                          <div className="relative">
-                            <FileText className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                            <textarea
-                              {...register('notes')}
-                              rows={3}
-                              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all resize-none"
-                              placeholder="Información adicional sobre el cliente..."
-                              disabled={isSubmitting}
-                            />
-                          </div>
                         </div>
                       </div>
                     </div>

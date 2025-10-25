@@ -312,7 +312,7 @@ class ClientService {
       const response = await fetch(`${API_BASE_URL}/clients/validate-document`, {
         method: 'POST',
         ...this.getRequestOptions(),
-        body: JSON.stringify({ document_type: documentType, document_number: documentNumber })
+        body: JSON.stringify({ document_type: documentType, document: documentNumber })
       });
 
       if (!response.ok) {

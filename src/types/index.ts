@@ -4,44 +4,33 @@ export * from './pos';
 // Client types
 export interface Client {
   id: string;
-  document_type: 'cedula' | 'nit' | 'pasaporte' | 'cedula_extranjeria';
-  document_number: string;
+  company_id: string;
   name: string;
-  last_name: string;
-  phone: string;
   email?: string;
+  phone: string;
+  document: string;
   address?: string;
   city?: string;
-  department?: string;
   birth_date?: string;
-  points: number;
-  total_purchases: number;
-  total_spent: number;
-  last_purchase?: string;
-  status: 'active' | 'inactive' | 'blocked';
-  preferred_payment_method?: string;
-  notes?: string;
+  is_active: boolean;
+  created_by: string;
+  updated_by: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateClientData {
-  document_type: 'cedula' | 'nit' | 'pasaporte' | 'cedula_extranjeria';
-  document_number: string;
   name: string;
-  last_name: string;
-  phone: string;
   email?: string;
+  phone: string;
+  document: string;
   address?: string;
   city?: string;
-  department?: string;
   birth_date?: string;
-  notes?: string;
 }
 
 export interface UpdateClientData extends Partial<CreateClientData> {
-  status?: 'active' | 'inactive' | 'blocked';
-  preferred_payment_method?: string;
+  is_active?: boolean;
 }
 
 export interface ClientFilters {

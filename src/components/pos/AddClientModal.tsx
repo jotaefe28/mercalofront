@@ -12,7 +12,18 @@ interface AddClientModalProps {
   onClientAdded?: (client: Client) => void;
 }
 
-interface ClientFormData extends CreateClientData {}
+interface ClientFormData {
+  name: string;
+  email?: string;
+  phone: string;
+  address?: string;
+  city?: string;
+  birth_date?: string;
+  // Campos auxiliares para el formulario
+  document_type?: 'cedula' | 'nit' | 'pasaporte' | 'cedula_extranjeria';
+  document_number?: string;
+  last_name?: string;
+}
 
 export const AddClientModal: React.FC<AddClientModalProps> = ({
   isOpen,
@@ -36,7 +47,18 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
     setIsSubmitting(true);
     
     try {
-      const newClient = await clientService.createClient(data);
+      // Combinar los campos para crear el documento y nombre completo
+      const clientData: CreateClientData = {
+        name: `${data.name} ${data.last_name || ''}`.trim(),
+        email: data.email,
+        phone: data.phone,
+        document: data.document_number || '',
+        address: data.address,
+        city: data.city,
+        birth_date: data.birth_date
+      };
+      
+      const newClient = await clientService.createClient(clientData);
       
       toast.success('Cliente agregado exitosamente');
       onClientAdded?.(newClient);
@@ -268,17 +290,6 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({
                           {...register('city')}
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
                           placeholder="Ej: Bogotá"
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Departamento
-                        </label>
-                        <input
-                          {...register('department')}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-nequi-pink focus:border-transparent transition-all"
-                          placeholder="Ej: Cundinamarca"
                           disabled={isSubmitting}
                         />
                       </div>
