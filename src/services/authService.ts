@@ -1,266 +1,197 @@
-import axios from 'axios';
-import type { AxiosInstance, AxiosResponse } from 'axios';
 import type {
   LoginCredentials,
   LoginResponse,
   RegisterData,
-  RefreshTokenResponse,
   PasswordResetRequest,
   PasswordReset,
   ChangePasswordData,
   ApiResponse,
-  User,
-  JWTPayload
+  User
 } from '@/types';
-import { 
-  CSRFService, 
-  SecurityHeadersService, 
-  SecurityLogger, 
-  SanitizationService,
-  SessionSecurityService,
-  RateLimitService
-} from './securityService';
 
 class AuthService {
-  private api: AxiosInstance;
-  private readonly baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+  private readonly baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
 
   constructor() {
-    this.api = axios.create({
-      baseURL: this.baseURL,
-      headers: {
-        'Content-Type': 'application/json',
-        ...SecurityHeadersService.getSecurityHeaders(),
-      },
-      timeout: 10000,
-      withCredentials: true, // Enable automatic cookie handling
-    });
-
-    this.setupInterceptors();
-    this.initializeSecurity();
+    console.log('🔧 AuthService initialized with baseURL:', this.baseURL);
   }
 
-  private initializeSecurity(): void {
-    // Initialize CSRF token
-    if (!CSRFService.getCSRFToken()) {
-      const token = CSRFService.generateCSRFToken();
-      CSRFService.setCSRFToken(token);
-    }
-
-    // Initialize session security
-    SessionSecurityService.initializeSessionSecurity();
-
-    // Listen for session events
-    window.addEventListener('session-expired', this.handleSessionExpired.bind(this));
-    window.addEventListener('session-warning', this.handleSessionWarning.bind(this));
-  }
-
-  private handleSessionExpired(): void {
-    this.logout();
-    window.location.href = '/login?reason=session-expired';
-  }
-
-  private handleSessionWarning(event: Event): void {
-    const customEvent = event as CustomEvent;
-    // Show session warning modal/toast
-    console.warn('Session will expire soon:', customEvent.detail?.remainingTime);
-  }
-
-  private setupInterceptors(): void {
-    // Request interceptor to add security headers
-    this.api.interceptors.request.use(
-      (config) => {
-        // Add CSRF token
-        const csrfHeaders = CSRFService.getCSRFHeaders();
-        Object.assign(config.headers, csrfHeaders);
-
-        // Add security headers
-        const securityHeaders = SecurityHeadersService.getSecurityHeaders();
-        Object.assign(config.headers, securityHeaders);
-
-        // Update session activity
-        SessionSecurityService.updateLastActivity();
-
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    // Response interceptor to handle auth errors and security validation
-    this.api.interceptors.response.use(
-      (response) => {
-        // Validate security headers in response
-        const hasSecurityHeaders = SecurityHeadersService.validateSecurityHeaders(
-          response.headers as Record<string, string>
-        );
-
-        if (!hasSecurityHeaders) {
-          SecurityLogger.log({
-            type: 'security_header_missing',
-            severity: 'medium',
-            message: 'Response missing required security headers',
-            details: { url: response.config.url }
-          });
-        }
-
-        return response;
-      },
-      async (error) => {
-        const originalRequest = error.config;
-
-        if (error.response?.status === 401) {
-          SecurityLogger.log({
-            type: 'token_expired',
-            severity: 'high',
-            message: 'Unauthorized access, redirecting to login',
-            details: { url: originalRequest.url }
-          });
-
-          this.logout();
-          window.location.href = '/login';
-          return Promise.reject(error);
-        }
-
-        // Log security-related errors
-        if (error.response?.status === 403) {
-          SecurityLogger.log({
-            type: 'csrf_violation',
-            severity: 'high',
-            message: 'CSRF token validation failed',
-            details: { url: originalRequest.url }
-          });
-        }
-
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  // Remove token refresh logic as we're using cookies
-  // private async handleTokenRefresh(): Promise<string> {
-  //   Removed - using cookies now
-  // }
-
-  // Authentication methods
-  async login(credentials: LoginCredentials): Promise<LoginResponse> {
-    // Sanitize input
-    const sanitizedCredentials = {
-      ...credentials,
-      email: SanitizationService.sanitizeEmail(credentials.email),
-      password: credentials.password, // Don't sanitize password to avoid breaking it
-    };
-
-    // Rate limiting check
-    const rateLimitKey = `login_${sanitizedCredentials.email}`;
-    const rateLimitResult = RateLimitService.checkRateLimit(rateLimitKey, 5, 15 * 60 * 1000);
-
-    if (!rateLimitResult.allowed) {
-      SecurityLogger.log({
-        type: 'rate_limit_exceeded',
-        severity: 'high',
-        message: 'Login rate limit exceeded',
-        details: { 
-          email: sanitizedCredentials.email,
-          retryAfter: rateLimitResult.retryAfter,
-          remainingAttempts: rateLimitResult.remainingAttempts
-        }
-      });
-
-      throw new Error(`Too many login attempts. Try again in ${Math.ceil(rateLimitResult.retryAfter / 1000 / 60)} minutes.`);
-    }
-
-    SecurityLogger.log({
-      type: 'login_attempt',
-      severity: 'low',
-      message: 'User attempting to login',
-      details: { email: sanitizedCredentials.email }
+  // Helper method to make fetch requests
+  private async makeRequest<T>(
+    endpoint: string, 
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`;
+    
+    console.log('🌐 Making fetch request to:', url);
+    console.log('📤 Request options:', {
+      method: options.method || 'GET',
+      headers: options.headers,
+      body: options.body ? 'Present' : 'None'
     });
 
     try {
-      const response: AxiosResponse<LoginResponse> = await this.api.post('/auth/login', sanitizedCredentials);
-
-      if (response.data.success) {
-        // Reset rate limit on successful login
-        RateLimitService.resetRateLimit(rateLimitKey);
-
-        // Extend session
-        SessionSecurityService.extendSession();
-
-        SecurityLogger.log({
-          type: 'login_success',
-          severity: 'low',
-          message: 'User successfully logged in',
-          details: { 
-            email: sanitizedCredentials.email,
-            userId: response.data.data.user.id
-          }
-        });
-
-        return response.data;
-      }
-
-      throw new Error('Login failed');
-    } catch (error: any) {
-      SecurityLogger.log({
-        type: 'login_failure',
-        severity: 'medium',
-        message: 'Login attempt failed',
-        details: { 
-          email: sanitizedCredentials.email,
-          error: error.message
-        }
+      const response = await fetch(url, {
+        credentials: 'include', // Para enviar cookies automáticamente
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
       });
 
-      // Increment backoff on failed login
-      RateLimitService.incrementBackoff(rateLimitKey);
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
 
+      const data = await response.json();
+      console.log('✅ Response data parsed:', data);
+
+      if (!response.ok) {
+        console.error('❌ Response not ok:', {
+          status: response.status,
+          statusText: response.statusText,
+          data
+        });
+        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('❌ Fetch error:', error);
+      
+      // Si es un error de parsing JSON, lo manejamos
+      if (error.name === 'SyntaxError') {
+        throw new Error('Error parsing server response');
+      }
+      
       throw this.handleError(error);
+    }
+  }
+
+  // Authentication methods
+  async login(credentials: LoginCredentials): Promise<LoginResponse> {
+    console.log('🔍 AuthService - Starting login with:', { 
+      email: credentials.email, 
+      baseURL: this.baseURL 
+    });
+
+    const loginData = {
+      email: credentials.email,
+      password: credentials.password,
+    };
+
+    console.log('📤 AuthService - Sending login data:', { 
+      email: loginData.email 
+    });
+
+    try {
+      const response = await this.makeRequest<any>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(loginData),
+      });
+
+      console.log('📡 Raw server response:', response);
+
+      // Adaptamos la respuesta del servidor al formato esperado
+      if (response.ok === true || response.success === true) {
+        console.log('🎉 AuthService - Login successful!');
+        
+        // Convertimos la respuesta del servidor al formato esperado
+        const adaptedResponse: LoginResponse = {
+          success: true,
+          data: {
+            user: response.user,
+            message: response.message
+          },
+          message: response.message || 'Login exitoso'
+        };
+        
+        console.log('✅ Adapted response:', adaptedResponse);
+        return adaptedResponse;
+      }
+
+      throw new Error(response.message || 'Login failed');
+    } catch (error: any) {
+      console.error('❌ AuthService - Login failed:', error);
+      throw error;
     }
   }
 
   async register(data: RegisterData): Promise<ApiResponse<User>> {
     try {
-      const response: AxiosResponse<ApiResponse<User>> = await this.api.post('/auth/register', data);
-      return response.data;
+      return await this.makeRequest<ApiResponse<User>>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
     } catch (error: any) {
       throw this.handleError(error);
     }
   }
 
   async logout(): Promise<void> {
-    SecurityLogger.log({
-      type: 'logout',
-      severity: 'low',
-      message: 'User logging out',
-    });
-
+    console.log('🚪 AuthService - Logging out');
+    
     try {
-      await this.api.post('/auth/logout');
+      await this.makeRequest('/auth/logout', {
+        method: 'POST',
+      });
+      console.log('✅ AuthService - Logout successful');
     } catch (error) {
       // Continue with logout even if server request fails
-      console.error('Error during server logout:', error);
-    } finally {
-      CSRFService.removeCSRFToken();
-      SessionSecurityService.destroySession();
+      console.error('⚠️ Error during server logout:', error);
     }
   }
 
-  // Removed refreshToken method - using cookies now
-
   async verifyToken(): Promise<boolean> {
     try {
-      const response = await this.api.get('/auth/verify');
-      return response.data.success;
+      console.log('🔍 AuthService - Verifying token...');
+      const response = await this.makeRequest<any>('/auth/verify');
+      
+      console.log('📡 Verify response:', response);
+      
+      // El servidor puede devolver {authenticated: true} o {success: true}
+      const isAuthenticated = response.authenticated === true || 
+                            response.success === true || 
+                            response.ok === true;
+      
+      console.log('✅ Token verification result:', isAuthenticated);
+      return isAuthenticated;
     } catch (error) {
+      console.log('🔍 Token verification failed:', error);
       return false;
+    }
+  }
+
+  async getVerifyData(): Promise<any> {
+    try {
+      console.log('🔍 AuthService - Getting verify data...');
+      const response = await this.makeRequest<any>('/auth/verify');
+      console.log('📡 Verify data response:', response);
+      return response;
+    } catch (error) {
+      console.log('🔍 Get verify data failed:', error);
+      throw error;
     }
   }
 
   async getCurrentUser(): Promise<User> {
     try {
-      const response: AxiosResponse<ApiResponse<User>> = await this.api.get('/auth/me');
-      return response.data.data!;
+      console.log('👤 AuthService - Getting current user...');
+      const response = await this.makeRequest<any>('/auth/me');
+      
+      console.log('📡 Current user response:', response);
+      
+      // El servidor puede devolver el usuario directamente o en response.data
+      const user = response.user || response.data?.user || response.data;
+      
+      if (!user) {
+        throw new Error('User data not found in response');
+      }
+      
+      console.log('✅ Current user:', user);
+      return user;
     } catch (error: any) {
+      console.error('❌ Failed to get current user:', error);
       throw this.handleError(error);
     }
   }
@@ -268,8 +199,10 @@ class AuthService {
   // Password management
   async requestPasswordReset(data: PasswordResetRequest): Promise<ApiResponse> {
     try {
-      const response: AxiosResponse<ApiResponse> = await this.api.post('/auth/forgot-password', data);
-      return response.data;
+      return await this.makeRequest<ApiResponse>('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
     } catch (error: any) {
       throw this.handleError(error);
     }
@@ -277,8 +210,10 @@ class AuthService {
 
   async resetPassword(data: PasswordReset): Promise<ApiResponse> {
     try {
-      const response: AxiosResponse<ApiResponse> = await this.api.post('/auth/reset-password', data);
-      return response.data;
+      return await this.makeRequest<ApiResponse>('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
     } catch (error: any) {
       throw this.handleError(error);
     }
@@ -286,72 +221,12 @@ class AuthService {
 
   async changePassword(data: ChangePasswordData): Promise<ApiResponse> {
     try {
-      const response: AxiosResponse<ApiResponse> = await this.api.post('/auth/change-password', data);
-      return response.data;
+      return await this.makeRequest<ApiResponse>('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
     } catch (error: any) {
       throw this.handleError(error);
-    }
-  }
-
-  // Token management removed - using cookies now
-  // All token-related methods have been removed as authentication
-  // is now handled via HTTP-only cookies from the server
-
-  // Token validation
-  isTokenValid(token: string): boolean {
-    try {
-      const payload = this.decodeToken(token);
-      const now = Date.now() / 1000;
-      return payload.exp > now;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  // Create a simple mock JWT for demo purposes (NOT secure)
-  private createMockToken(payload: Record<string, any>): string {
-    const header = { alg: 'HS256', typ: 'JWT' };
-    const encode = (obj: Record<string, any>) =>
-      btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-
-    const headerB64 = encode(header);
-    const payloadB64 = encode(payload);
-    const signature = 'signature'; // placeholder
-
-    return `${headerB64}.${payloadB64}.${signature}`;
-  }
-
-  // Expose a helper to get the token payload (safe for demo)
-  getPayloadFromToken(token: string): JWTPayload | null {
-    try {
-      return this.decodeToken(token);
-    } catch (error) {
-      return null;
-    }
-  }
-
-  decodeToken(token: string): JWTPayload {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      return JSON.parse(jsonPayload);
-    } catch (error) {
-      throw new Error('Invalid token format');
-    }
-  }
-
-  getTokenExpiration(token: string): Date | null {
-    try {
-      const payload = this.decodeToken(token);
-      return new Date(payload.exp * 1000);
-    } catch (error) {
-      return null;
     }
   }
 
@@ -362,18 +237,14 @@ class AuthService {
 
   // Error handling
   private handleError(error: any): Error {
-    if (error.response?.data?.message) {
-      return new Error(error.response.data.message);
-    }
-    
     if (error.message) {
       return new Error(error.message);
     }
-
+    
     return new Error('An unexpected error occurred');
   }
 
-  // Rate limiting helper
+  // Rate limiting helper (simplified version)
   private rateLimitAttempts = new Map<string, { count: number; resetTime: number }>();
 
   isRateLimited(key: string, maxAttempts: number = 5, windowMs: number = 15 * 60 * 1000): boolean {

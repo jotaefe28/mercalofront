@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
 import type { ReactNode } from 'react';
 import type { 
-  AuthState, 
   User, 
   Company, 
   LoginCredentials, 
@@ -10,6 +9,17 @@ import type {
 } from '@/types';
 import { authService } from '@/services';
 import toast from 'react-hot-toast';
+
+// Define AuthState interface locally
+interface AuthState {
+  user: User | null;
+  company: Company | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
 
 // Action types
 type AuthAction =
@@ -109,26 +119,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Login function
   const login = async (credentials: LoginCredentials): Promise<void> => {
+    console.log('🔐 AuthContext - Login function called');
+    
     const rateLimitKey = `login_${credentials.email}`;
     
     if (authService.isRateLimited(rateLimitKey)) {
       const error = 'Too many login attempts. Please try again in 15 minutes.';
+      console.log('⏰ AuthContext - Rate limited:', error);
       dispatch({ type: 'AUTH_FAILURE', payload: error });
       toast.error(error);
       return;
     }
 
+    console.log('🚦 AuthContext - Dispatching AUTH_START');
     dispatch({ type: 'AUTH_START' });
 
     try {
+      console.log('📞 AuthContext - Calling authService.login...');
       const response = await authService.login(credentials);
 
-      if (response.success) {
+      console.log('📡 AuthContext - Response received:', response);
+
+      if (response.success && response.data?.user) {
+        console.log('✅ AuthContext - Login successful, dispatching AUTH_SUCCESS');
+        console.log('👤 User data:', response.data.user);
+        
         dispatch({
           type: 'AUTH_SUCCESS',
           payload: {
             user: response.data.user,
-            company: response.data.company,
+            company: {
+              id: '1',
+              name: response.data.user.name + ' Company',
+              legal_name: response.data.user.name + ' Company',
+              nit: '123456789',
+              document_type: 'nit' as const,
+              address: 'Dirección por defecto',
+              city: 'Bogotá',
+              state: 'Cundinamarca',
+              country: 'Colombia',
+              phone: '123456789',
+              email: response.data.user.email,
+              tax_regime: 'simplified' as const,
+              industry: 'Retail',
+              is_active: true,
+              settings: {} as any,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
           },
         });
 
@@ -136,9 +174,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         authService.resetRateLimit(rateLimitKey);
         toast.success(`¡Bienvenido, ${response.data.user.name}!`);
       } else {
-        throw new Error(response.message || 'Error al iniciar sesión');
+        console.error('❌ AuthContext - Invalid response structure:', response);
+        throw new Error(response.message || 'Error al iniciar sesión - respuesta inválida');
       }
     } catch (error: any) {
+      console.error('❌ AuthContext - Login error:', error);
       const errorMessage = error.message || 'Error al iniciar sesión';
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
       toast.error(errorMessage);
@@ -205,40 +245,74 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check authentication status
   const checkAuth = async (): Promise<void> => {
+    console.log('🔒 AuthContext - Starting auth check...');
     dispatch({ type: 'AUTH_START' });
 
     try {
       // Verify authentication with server using cookies
+      console.log('🔍 AuthContext - Verifying token...');
       const isValid = await authService.verifyToken();
       
+      console.log('🔍 AuthContext - Token verification result:', isValid);
+      
       if (isValid) {
-        // Get current user data from server
-        const currentUser = await authService.getCurrentUser();
+        console.log('✅ AuthContext - Token valid, getting current user...');
+        
+        let currentUser;
+        try {
+          // Intenta obtener el usuario actual del endpoint /auth/me
+          currentUser = await authService.getCurrentUser();
+          console.log('👤 AuthContext - Current user from /auth/me:', currentUser);
+        } catch (error) {
+          console.log('⚠️ AuthContext - /auth/me failed, trying to get user from verify response...');
+          // Si falla, intenta verificar de nuevo y obtener el usuario de la respuesta
+          try {
+            const verifyResponse = await authService.getVerifyData();
+            currentUser = verifyResponse.user;
+            if (!currentUser) {
+              throw new Error('No user data available');
+            }
+            console.log('👤 AuthContext - Current user from verify:', currentUser);
+          } catch (verifyError) {
+            console.error('❌ AuthContext - Could not get user data:', verifyError);
+            dispatch({ type: 'AUTH_LOGOUT' });
+            return;
+          }
+        }
         
         dispatch({
           type: 'AUTH_SUCCESS',
           payload: {
             user: currentUser,
             company: {
-              id: currentUser.companyId,
-              name: 'Mi Empresa', // This would come from server
-              businessType: 'Retail',
-              nit: '',
-              address: '',
-              phone: '',
-              email: '',
-              plan: 'basic' as const,
-              isActive: true,
-              createdAt: new Date(),
-              updatedAt: new Date(),
+              id: '1',
+              name: 'Mi Nueva Tienda POS',
+              legal_name: 'Mi Nueva Tienda POS S.A.S',
+              nit: '123456789',
+              document_type: 'nit' as const,
+              address: 'Dirección por defecto',
+              city: 'Bogotá',
+              state: 'Cundinamarca',
+              country: 'Colombia',
+              phone: '123456789',
+              email: currentUser.email,
+              tax_regime: 'simplified' as const,
+              industry: 'Retail',
+              is_active: true,
+              settings: {} as any,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             },
           },
         });
+        
+        console.log('✅ AuthContext - Authentication successful, user is logged in');
       } else {
+        console.log('❌ AuthContext - Token invalid, logging out...');
         dispatch({ type: 'AUTH_LOGOUT' });
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error('❌ AuthContext - Auth check failed:', error);
       dispatch({ type: 'AUTH_LOGOUT' });
     }
   };

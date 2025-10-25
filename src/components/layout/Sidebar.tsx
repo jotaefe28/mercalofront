@@ -204,7 +204,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                     {/* Indicador activo para sidebar colapsado */}
                     {isActive && isSidebarCollapsed && (
                       <motion.div
-                        className="absolute -right-1 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-white rounded-l-full"
+                        className="absolute -right-1 top-1/8 transform -translate-y-1/2 w-1 h-8 bg-white rounded-l-full"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ duration: 0.2 }}

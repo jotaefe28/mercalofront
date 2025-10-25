@@ -50,14 +50,29 @@ export default function LoginPage() {
 
   const onSubmit = async (data: FormData) => {
     try {
+      console.log('🔍 LoginPage - Starting login process');
+      console.log('🌐 LoginPage - Environment variables:', {
+        VITE_API_URL: import.meta.env.VITE_API_URL,
+        NODE_ENV: import.meta.env.NODE_ENV
+      });
+      console.log('📧 LoginPage - Form data:', { 
+        email: data.email, 
+        rememberMe: data.rememberMe 
+      });
+
       const credentials: LoginCredentials = {
         email: data.email,
         password: data.password,
         rememberMe: data.rememberMe,
       };
+      
+      console.log('🚀 LoginPage - Calling auth context login...');
       await login(credentials);
+      
+      console.log('✅ LoginPage - Login successful, navigating...');
       navigate(from, { replace: true });
     } catch (error) {
+      console.error('❌ LoginPage - Login failed:', error);
       // Error handling is done in the context
     }
   };
